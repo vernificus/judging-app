@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "plujudging",
     "public": "dist",
     "ignore": [
       "firebase.json",

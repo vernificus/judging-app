@@ -6,7 +6,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Artifacts collection structure
+    // --- JUDGING APP (Existing) ---
     match /artifacts/{appId}/public/data/scores/{scoreId} {
       // Allow authenticated users to read all scores
       allow read: if isAuthenticated();
@@ -19,6 +19,19 @@ service cloud.firestore {
       // Allow users to update or delete only their own scores
       allow update, delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
+    }
+
+    // --- GAME ROOMS ---
+    // This allows signed-in users (even anonymous) to use the rooms
+    match /artifacts/{appId}/public/data/rooms/{roomCode} {
+      allow read, write: if request.auth != null;
+    }
+
+    // --- VOCAB VOICE RALLY ---
+    // This strictly matches ONLY data for the Vocab App
+    // and puts it in "Test Mode" (open access)
+    match /artifacts/vocab-rally-class-1/{document=**} {
+      allow read, write: if true;
     }
 
     // Deny all other access by default
