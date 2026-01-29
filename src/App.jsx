@@ -285,267 +285,287 @@ export default function RubricApp() {
     URL.revokeObjectURL(url);
   };
 
-  // --- Views ---
+// --- Views ---
 
-  const LandingView = () => (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
-      <div className="text-center mb-8">
-        <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-800">Innovation Judge</h1>
-        <p className="text-gray-500">2025-2026 Scoring App</p>
+const LandingView = ({ formData, setFormData, handleStartScoring, setView }) => (
+  <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
+    <div className="text-center mb-8">
+      <Trophy className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+      <h1 className="text-2xl font-bold text-gray-800">Innovation Judge</h1>
+      <p className="text-gray-500">2025-2026 Scoring App</p>
+    </div>
+
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Judge Name</label>
+        <div className="relative">
+          <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Ex: Mr. Smith"
+            value={formData.judgeName}
+            onChange={e => setFormData({ ...formData, judgeName: e.target.value })}
+          />
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Judge Name</label>
-          <div className="relative">
-            <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Ex: Mr. Smith"
-              value={formData.judgeName}
-              onChange={e => setFormData({...formData, judgeName: e.target.value})}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
-          <div className="relative">
-            <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
-            <select
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
-              value={formData.schoolSection}
-              onChange={e => setFormData({...formData, schoolSection: e.target.value})}
-            >
-              <option value="" disabled>Select a section</option>
-              {SCHOOL_SECTIONS.map((section) => (
-                <option key={section} value={section}>
-                  {section}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
-          <div className="relative">
-            <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Ex: Drone Rescuers"
-              value={formData.teamName}
-              onChange={e => setFormData({...formData, teamName: e.target.value})}
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleStartScoring}
-          disabled={!formData.judgeName || !formData.teamName}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          Start Scoring <ChevronRight className="w-5 h-5" />
-        </button>
-
-        <div className="mt-6 pt-6 border-t text-center">
-          <button
-            onClick={() => setView('dashboard')}
-            className="text-gray-500 hover:text-blue-600 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
+        <div className="relative">
+          <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+          <select
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
+            value={formData.schoolSection}
+            onChange={e => setFormData({ ...formData, schoolSection: e.target.value })}
           >
-            View Dashboard <ClipboardCheck className="w-4 h-4" />
+            <option value="" disabled>Select a section</option>
+            {SCHOOL_SECTIONS.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+        <div className="relative">
+          <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Ex: Drone Rescuers"
+            value={formData.teamName}
+            onChange={e => setFormData({ ...formData, teamName: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleStartScoring}
+        disabled={!formData.judgeName || !formData.teamName}
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        Start Scoring <ChevronRight className="w-5 h-5" />
+      </button>
+
+      <div className="mt-6 pt-6 border-t text-center">
+        <button
+          onClick={() => setView('dashboard')}
+          className="text-gray-500 hover:text-blue-600 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+        >
+          View Dashboard <ClipboardCheck className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const DashboardView = ({ submittedData, setView, exportToCSV }) => {
+  // Group scores by section
+  const groupedData = useMemo(() => {
+    const groups = {};
+    submittedData.forEach(item => {
+      const section = item.schoolSection || 'Unassigned';
+      if (!groups[section]) groups[section] = [];
+      groups[section].push(item);
+    });
+    return groups;
+  }, [submittedData]);
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Judging Dashboard</h1>
+          <p className="text-gray-500">{submittedData.length} submissions total</p>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+           <button
+            onClick={() => setView('landing')}
+            className="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" /> Score New Team
+          </button>
+          <button
+            onClick={exportToCSV}
+            disabled={submittedData.length === 0}
+            className="flex-1 sm:flex-none bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
       </div>
-    </div>
-  );
 
-  const ScoringView = () => {
-    const currentTotal = calculateTotal();
-    const maxPoints = getMaxPoints();
-
-    return (
-      <div className="max-w-2xl mx-auto pb-20">
-        {/* Header */}
-        <div className="bg-white sticky top-0 z-10 shadow-sm border-b p-4 mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <button
-              onClick={() => setView('landing')}
-              className="text-gray-500 hover:text-gray-800 text-sm flex items-center gap-1"
-            >
-              <ChevronLeft className="w-4 h-4" /> Cancel
-            </button>
-            <div className="font-bold text-gray-800">{formData.teamName}</div>
-            <div className="text-blue-600 font-bold text-lg">{currentTotal} <span className="text-xs text-gray-500">/ {maxPoints}</span></div>
-          </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 transition-all duration-500"
-              style={{ width: `${(currentTotal / maxPoints) * 100}%` }}
-            />
-          </div>
+      {Object.keys(groupedData).length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+          <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+          <h3 className="text-gray-500 font-medium">No scores submitted yet</h3>
+          <p className="text-gray-400 text-sm">Scores will appear here in real-time</p>
         </div>
-
-        {/* Form */}
-        <div className="space-y-6 px-4">
-          {RUBRIC_SECTIONS.map((section) => (
-            <div key={section.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="bg-blue-50 p-4 border-b">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                  <ListTodo className="w-5 h-5 text-blue-600" />
-                  {section.title}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedData).map(([section, items]) => (
+            <div key={section} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-gray-100 px-6 py-3 border-b flex justify-between items-center">
+                <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                  <School className="w-4 h-4" /> {section}
+                </h2>
+                <span className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600">
+                  {items.length} teams
+                </span>
               </div>
-
-              <div className="p-2 sm:p-4">
-                <div className="grid grid-cols-1 gap-2">
-                  {section.items.map(item => (
-                    <label
-                      key={item.id}
-                      className={`
-                        flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all select-none
-                        ${checklist[item.id]
-                          ? 'bg-green-50 border-green-300 shadow-sm'
-                          : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-300'}
-                      `}
-                    >
-                      <div className="pt-0.5">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6 text-green-600 rounded focus:ring-green-500 cursor-pointer"
-                          checked={!!checklist[item.id]}
-                          onChange={() => handleChecklistToggle(item.id)}
-                        />
-                      </div>
-                      <span className={`text-base ${checklist[item.id] ? 'text-green-900 font-medium' : 'text-gray-700'}`}>
-                        {item.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="px-6 py-3 font-medium">Team</th>
+                      <th className="px-6 py-3 font-medium">Judge</th>
+                      <th className="px-6 py-3 font-medium text-right">Score</th>
+                      <th className="px-6 py-3 font-medium text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {items.map((row) => (
+                      <tr key={row.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-3 font-medium text-gray-800">{row.teamName}</td>
+                        <td className="px-6 py-3 text-gray-500">{row.judgeName}</td>
+                        <td className="px-6 py-3 text-right">
+                          <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                            {row.totalScore}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-right text-gray-400 text-xs">
+                          {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+};
 
-        {/* Submit Footer */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg flex items-center justify-between max-w-2xl mx-auto z-20">
-          <div className="text-sm">
-            <span className="text-gray-500">Total Score:</span>
-            <div className="font-bold text-2xl text-gray-800">{currentTotal}</div>
-          </div>
+const ScoringView = ({
+  setView,
+  formData,
+  checklist,
+  handleChecklistToggle,
+  calculateTotal,
+  getMaxPoints,
+  handleSubmit,
+  loading
+}) => {
+  const currentTotal = calculateTotal();
+  const maxPoints = getMaxPoints();
+
+  return (
+    <div className="max-w-2xl mx-auto pb-20">
+      {/* Header */}
+      <div className="bg-white sticky top-0 z-10 shadow-sm border-b p-4 mb-6">
+        <div className="flex justify-between items-center mb-2">
           <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow hover:bg-green-700 transition flex items-center gap-2 disabled:opacity-70"
+            onClick={() => setView('landing')}
+            className="text-gray-500 hover:text-gray-800 text-sm flex items-center gap-1"
           >
-            {loading ? 'Saving...' : 'Submit Score'}
-            {!loading && <Save className="w-5 h-5" />}
+            <ChevronLeft className="w-4 h-4" /> Cancel
           </button>
+          <div className="font-bold text-gray-800">{formData.teamName}</div>
+          <div className="text-blue-600 font-bold text-lg">
+            {currentTotal} <span className="text-xs text-gray-500">/ {maxPoints}</span>
+          </div>
+        </div>
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 transition-all duration-500"
+            style={{ width: `${(currentTotal / maxPoints) * 100}%` }}
+          />
         </div>
       </div>
-    );
-  };
 
-  const DashboardView = () => {
-    // Group scores by section
-    const groupedData = useMemo(() => {
-      const groups = {};
-      submittedData.forEach(item => {
-        const section = item.schoolSection || 'Unassigned';
-        if (!groups[section]) groups[section] = [];
-        groups[section].push(item);
-      });
-      return groups;
-    }, [submittedData]);
+      {/* Form */}
+      <div className="space-y-6 px-4">
+        {RUBRIC_SECTIONS.map((section) => (
+          <div key={section.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className="bg-blue-50 p-4 border-b">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <ListTodo className="w-5 h-5 text-blue-600" />
+                {section.title}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+            </div>
 
-    return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Judging Dashboard</h1>
-            <p className="text-gray-500">{submittedData.length} submissions total</p>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-             <button
-              onClick={() => setView('landing')}
-              className="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2"
-            >
-              <ChevronLeft className="w-4 h-4" /> Score New Team
-            </button>
-            <button
-              onClick={exportToCSV}
-              disabled={submittedData.length === 0}
-              className="flex-1 sm:flex-none bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" /> Export CSV
-            </button>
-          </div>
-        </div>
-
-        {Object.keys(groupedData).length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-            <h3 className="text-gray-500 font-medium">No scores submitted yet</h3>
-            <p className="text-gray-400 text-sm">Scores will appear here in real-time</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Object.entries(groupedData).map(([section, items]) => (
-              <div key={section} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div className="bg-gray-100 px-6 py-3 border-b flex justify-between items-center">
-                  <h2 className="font-bold text-gray-700 flex items-center gap-2">
-                    <School className="w-4 h-4" /> {section}
-                  </h2>
-                  <span className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600">
-                    {items.length} teams
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 text-gray-500">
-                      <tr>
-                        <th className="px-6 py-3 font-medium">Team</th>
-                        <th className="px-6 py-3 font-medium">Judge</th>
-                        <th className="px-6 py-3 font-medium text-right">Score</th>
-                        <th className="px-6 py-3 font-medium text-right">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {items.map((row) => (
-                        <tr key={row.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-3 font-medium text-gray-800">{row.teamName}</td>
-                          <td className="px-6 py-3 text-gray-500">{row.judgeName}</td>
-                          <td className="px-6 py-3 text-right">
-                            <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
-                              {row.totalScore}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-right text-gray-400 text-xs">
-                            {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            <div className="p-2 sm:p-4">
+              <div className="grid grid-cols-1 gap-2">
+                {section.items.map(item => (
+                  <label
+                    key={item.id}
+                    className={`
+                      flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all select-none
+                      ${checklist[item.id]
+                        ? 'bg-green-50 border-green-300 shadow-sm'
+                        : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-300'}
+                    `}
+                  >
+                    <div className="pt-0.5">
+                      <input
+                        type="checkbox"
+                        className="w-6 h-6 text-green-600 rounded focus:ring-green-500 cursor-pointer"
+                        checked={!!checklist[item.id]}
+                        onChange={() => handleChecklistToggle(item.id)}
+                      />
+                    </div>
+                    <span className={`text-base ${checklist[item.id] ? 'text-green-900 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </span>
+                  </label>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        )}
+        ))}
       </div>
-    );
-  };
+
+      {/* Submit Footer */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg flex items-center justify-between max-w-2xl mx-auto z-20">
+        <div className="text-sm">
+          <span className="text-gray-500">Total Score:</span>
+          <div className="font-bold text-2xl text-gray-800">{currentTotal}</div>
+        </div>
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow hover:bg-green-700 transition flex items-center gap-2 disabled:opacity-70"
+        >
+          {loading ? 'Saving...' : 'Submit Score'}
+          {!loading && <Save className="w-5 h-5" />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-      {view === 'landing' && <LandingView />}
-      {view === 'scoring' && <ScoringView />}
-      {view === 'dashboard' && <DashboardView />}
+      {view === 'landing' && <LandingView formData={formData} setFormData={setFormData} handleStartScoring={handleStartScoring} setView={setView} />}
+      {view === 'scoring' && <ScoringView
+        setView={setView}
+        formData={formData}
+        checklist={checklist}
+        handleChecklistToggle={handleChecklistToggle}
+        calculateTotal={calculateTotal}
+        getMaxPoints={getMaxPoints}
+        handleSubmit={handleSubmit}
+        loading={loading}
+      />}
+      {view === 'dashboard' && <DashboardView submittedData={submittedData} setView={setView} exportToCSV={exportToCSV} />}
     </div>
   );
 }
