@@ -79,7 +79,7 @@ const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 const DASHBOARD_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD || 'judge2025';
 
 // --- Constants ---
-const SCHOOL_SECTIONS = [
+const PROPEL_SCHOOLS = [
   "Frederick Douglass",
   "Forest Grove",
   "Guilford",
@@ -90,6 +90,20 @@ const SCHOOL_SECTIONS = [
   "Rolling Ridge",
   "Sugarland",
   "Sully"
+];
+
+const LEVEL_UP_SCHOOLS = [
+  "Seneca Ridge",
+  "Smarts Mill",
+  "Sterling",
+  "Harper Park",
+  "Simpson",
+  "River Bend"
+];
+
+const PROGRAMS = [
+  { id: 'propel', label: 'Propel' },
+  { id: 'levelup', label: 'Level Up' }
 ];
 
 // --- Simplified Rubric Data Structure (Checklist Only) ---
@@ -219,23 +233,44 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
           <div className="relative">
-            <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+            <Trophy className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
             <select
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
-              value={formData.schoolSection}
-              onChange={e => setFormData({...formData, schoolSection: e.target.value})}
+              value={formData.program}
+              onChange={e => setFormData({...formData, program: e.target.value, schoolSection: ''})}
             >
-              <option value="" disabled>Select a section</option>
-              {SCHOOL_SECTIONS.map((section) => (
-                <option key={section} value={section}>
-                  {section}
+              <option value="" disabled>Select a program</option>
+              {PROGRAMS.map((prog) => (
+                <option key={prog.id} value={prog.id}>
+                  {prog.label}
                 </option>
               ))}
             </select>
           </div>
         </div>
+
+        {formData.program && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
+            <div className="relative">
+              <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+              <select
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
+                value={formData.schoolSection}
+                onChange={e => setFormData({...formData, schoolSection: e.target.value})}
+              >
+                <option value="" disabled>Select a school</option>
+                {(formData.program === 'propel' ? PROPEL_SCHOOLS : LEVEL_UP_SCHOOLS).map((school) => (
+                  <option key={school} value={school}>
+                    {school}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
@@ -253,7 +288,7 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
 
         <button
           onClick={onStartScoring}
-          disabled={!formData.judgeName || !formData.teamName}
+          disabled={!formData.judgeName || !formData.teamName || !formData.program || !formData.schoolSection}
           className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           Start Scoring <ChevronRight className="w-5 h-5" />
@@ -374,15 +409,25 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
   const [editForm, setEditForm] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Group scores by section
-  const groupedData = useMemo(() => {
-    const groups = {};
+  // Group scores by program, then by school
+  const { propelData, levelupData } = useMemo(() => {
+    const propel = {};
+    const levelup = {};
+
     submittedData.forEach(item => {
-      const section = item.schoolSection || 'Unassigned';
-      if (!groups[section]) groups[section] = [];
-      groups[section].push(item);
+      const school = item.schoolSection || 'Unassigned';
+      const program = item.program || 'propel'; // Default to propel for legacy data
+
+      if (program === 'levelup') {
+        if (!levelup[school]) levelup[school] = [];
+        levelup[school].push(item);
+      } else {
+        if (!propel[school]) propel[school] = [];
+        propel[school].push(item);
+      }
     });
-    return groups;
+
+    return { propelData: propel, levelupData: levelup };
   }, [submittedData]);
 
   const handlePasswordSubmit = (e) => {
@@ -400,6 +445,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
     setEditForm({
       teamName: entry.teamName,
       judgeName: entry.judgeName,
+      program: entry.program || 'propel',
       schoolSection: entry.schoolSection,
       totalScore: entry.totalScore
     });
@@ -498,13 +544,26 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editForm.program}
+                  onChange={e => setEditForm({...editForm, program: e.target.value, schoolSection: ''})}
+                >
+                  {PROGRAMS.map(prog => (
+                    <option key={prog.id} value={prog.id}>{prog.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
                 <select
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   value={editForm.schoolSection}
                   onChange={e => setEditForm({...editForm, schoolSection: e.target.value})}
                 >
-                  {SCHOOL_SECTIONS.map(school => (
+                  <option value="">Select a school</option>
+                  {(editForm.program === 'levelup' ? LEVEL_UP_SCHOOLS : PROPEL_SCHOOLS).map(school => (
                     <option key={school} value={school}>{school}</option>
                   ))}
                 </select>
@@ -585,97 +644,201 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
         </div>
       </div>
 
-      {Object.keys(groupedData).length === 0 ? (
+      {submittedData.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
           <h3 className="text-gray-500 font-medium">No scores submitted yet</h3>
           <p className="text-gray-400 text-sm">Scores will appear here in real-time</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedData).map(([section, items]) => (
-            <div key={section} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="bg-gray-100 px-6 py-3 border-b flex justify-between items-center">
-                <h2 className="font-bold text-gray-700 flex items-center gap-2">
-                  <School className="w-4 h-4" /> {section}
-                </h2>
-                <span className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600">
-                  {items.length} teams
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-500">
-                    <tr>
-                      <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
-                      <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
-                      <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
-                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {items.map((row) => (
-                      <tr key={row.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
-                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
-                            {row.totalScore}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(row)}
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                              title="Edit"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(row)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="space-y-10">
+          {/* Propel Section */}
+          {Object.keys(propelData).length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-blue-600" /> Propel
+              </h2>
+              <div className="space-y-6">
+                {Object.entries(propelData).map(([school, items]) => (
+                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div className="bg-blue-50 px-6 py-3 border-b flex justify-between items-center">
+                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                        <School className="w-4 h-4" /> {school}
+                      </h3>
+                      <span className="text-xs bg-blue-100 px-2 py-1 rounded-full text-blue-600">
+                        {items.length} teams
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
+                            <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
+                            <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {items.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
+                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                                  {row.totalScore}
+                                </span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => handleEdit(row)}
+                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(row)}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Level Up Section */}
+          {Object.keys(levelupData).length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-green-600" /> Level Up
+              </h2>
+              <div className="space-y-6">
+                {Object.entries(levelupData).map(([school, items]) => (
+                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div className="bg-green-50 px-6 py-3 border-b flex justify-between items-center">
+                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                        <School className="w-4 h-4" /> {school}
+                      </h3>
+                      <span className="text-xs bg-green-100 px-2 py-1 rounded-full text-green-600">
+                        {items.length} teams
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
+                            <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
+                            <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
+                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {items.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
+                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded">
+                                  {row.totalScore}
+                                </span>
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => handleEdit(row)}
+                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(row)}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -688,6 +851,7 @@ export default function RubricApp() {
   const [view, setView] = useState('landing'); // landing, scoring, dashboard
   const [formData, setFormData] = useState({
     judgeName: '',
+    program: '',
     schoolSection: '',
     teamName: ''
   });
@@ -739,7 +903,7 @@ export default function RubricApp() {
 
   // --- Handlers ---
   const handleStartScoring = () => {
-    if (formData.judgeName && formData.teamName) {
+    if (formData.judgeName && formData.teamName && formData.program && formData.schoolSection) {
       setView('scoring');
       setChecklist({});
     }
@@ -817,12 +981,13 @@ export default function RubricApp() {
 
   const exportToCSV = () => {
     if (submittedData.length === 0) return;
-    const headers = ['School/Section', 'Team Name', 'Judge', 'Total Score', 'Max Points', 'Timestamp'];
+    const headers = ['Program', 'School', 'Team Name', 'Judge', 'Pitch', 'Solution', 'Model', 'Science', 'Auto', 'Drone', 'Pres', 'Total Score', 'Max Points', 'Timestamp'];
     const csvContent = [
       headers.join(','),
       ...submittedData.map(row => {
         const date = row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleString() : '';
-        return `"${row.schoolSection}","${row.teamName}","${row.judgeName}",${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
+        const program = row.program === 'levelup' ? 'Level Up' : 'Propel';
+        return `"${program}","${row.schoolSection}","${row.teamName}","${row.judgeName}",${getSectionScore(row, 'pitch')},${getSectionScore(row, 'solution')},${getSectionScore(row, 'model')},${getSectionScore(row, 'bonus_terms')},${getSectionScore(row, 'bonus_auto')},${getSectionScore(row, 'drone_demo')},${getSectionScore(row, 'overall')},${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
       })
     ].join('\n');
 
