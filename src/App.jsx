@@ -385,34 +385,6 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
     return groups;
   }, [submittedData]);
 
-  // Calculate section summaries for all submissions
-  const sectionSummary = useMemo(() => {
-    if (submittedData.length === 0) return null;
-
-    const summary = {
-      totalSubmissions: submittedData.length,
-      overallTotal: 0,
-      overallMax: 0,
-      sections: []
-    };
-
-    RUBRIC_SECTIONS.forEach(section => {
-      const sectionTotal = submittedData.reduce((sum, row) => sum + getSectionScore(row, section.id), 0);
-      const sectionMax = section.items.length * submittedData.length;
-      summary.sections.push({
-        id: section.id,
-        title: section.title,
-        total: sectionTotal,
-        max: sectionMax,
-        itemCount: section.items.length
-      });
-      summary.overallTotal += sectionTotal;
-      summary.overallMax += sectionMax;
-    });
-
-    return summary;
-  }, [submittedData]);
-
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
     if (password === DASHBOARD_PASSWORD) {
@@ -613,54 +585,6 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
         </div>
       </div>
 
-      {/* Section Score Summary */}
-      {sectionSummary && (
-        <div className="mb-8 bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="bg-blue-50 px-6 py-3 border-b">
-            <h2 className="font-bold text-gray-700 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-yellow-500" /> Score Summary
-            </h2>
-            <p className="text-sm text-gray-500">Aggregate scores across all {sectionSummary.totalSubmissions} submissions</p>
-          </div>
-          <div className="p-4">
-            {/* Overall Score */}
-            <div className="mb-4 p-4 bg-blue-100 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-blue-800">Overall Total</span>
-                <span className="text-2xl font-bold text-blue-700">
-                  {sectionSummary.overallTotal} <span className="text-sm font-normal text-blue-500">/ {sectionSummary.overallMax}</span>
-                </span>
-              </div>
-              <div className="mt-2 h-2 bg-blue-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-600 transition-all"
-                  style={{ width: `${sectionSummary.overallMax > 0 ? (sectionSummary.overallTotal / sectionSummary.overallMax) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Section Breakdown */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {sectionSummary.sections.map(section => (
-                <div key={section.id} className="p-3 bg-gray-50 rounded-lg border">
-                  <div className="text-xs text-gray-500 mb-1 truncate" title={section.title}>{section.title}</div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{section.total}</span>
-                    <span className="text-xs text-gray-400">/ {section.max}</span>
-                  </div>
-                  <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-green-500 transition-all"
-                      style={{ width: `${section.max > 0 ? (section.total / section.max) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {Object.keys(groupedData).length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
@@ -683,28 +607,52 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 text-gray-500">
                     <tr>
-                      <th className="px-6 py-3 font-medium">Team</th>
-                      <th className="px-6 py-3 font-medium">Judge</th>
-                      <th className="px-6 py-3 font-medium text-right">Score</th>
-                      <th className="px-6 py-3 font-medium text-right">Time</th>
-                      <th className="px-6 py-3 font-medium text-center">Actions</th>
+                      <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
+                      <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
+                      <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
+                      <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {items.map((row) => (
                       <tr key={row.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-medium text-gray-800">{row.teamName}</td>
-                        <td className="px-6 py-3 text-gray-500">{row.judgeName}</td>
-                        <td className="px-6 py-3 text-right">
+                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
                           <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
                             {row.totalScore}
                           </span>
                         </td>
-                        <td className="px-6 py-3 text-right text-gray-400 text-xs">
-                          {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-                        </td>
-                        <td className="px-6 py-3 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-2 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleEdit(row)}
                               className="p-1 text-blue-600 hover:bg-blue-50 rounded"
