@@ -8,7 +8,10 @@ import {
   onSnapshot,
   query,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc,
+  updateDoc,
+  doc
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -24,7 +27,11 @@ import {
   Save,
   ChevronRight,
   ChevronLeft,
-  ListTodo
+  ListTodo,
+  Trash2,
+  Pencil,
+  Lock,
+  X
 } from 'lucide-react';
 
 // --- Firebase Configuration ---
@@ -68,8 +75,11 @@ if (isFirebaseConfigValid) {
 
 const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 
+// Dashboard password - set via environment variable or use default
+const DASHBOARD_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD || 'judge2025';
+
 // --- Constants ---
-const PROPEL_SCHOOLS = [
+const SCHOOL_SECTIONS = [
   "Frederick Douglass",
   "Forest Grove",
   "Guilford",
@@ -80,20 +90,6 @@ const PROPEL_SCHOOLS = [
   "Rolling Ridge",
   "Sugarland",
   "Sully"
-];
-
-const LEVEL_UP_SCHOOLS = [
-  "Seneca Ridge",
-  "Smarts Mill",
-  "Sterling",
-  "Harper Park",
-  "Simpson",
-  "River Bend"
-];
-
-const PROGRAMS = [
-  { id: 'propel', label: 'Propel' },
-  { id: 'levelup', label: 'Level Up' }
 ];
 
 // --- Simplified Rubric Data Structure (Checklist Only) ---
@@ -185,30 +181,10 @@ const RUBRIC_SECTIONS = [
   }
 ];
 
-// --- Helper Functions ---
-// Calculate scores for each rubric section from a checklist
-function calculateSectionScores(checklist) {
-  const sectionScores = {};
-  RUBRIC_SECTIONS.forEach(section => {
-    const sectionTotal = section.items.reduce((sum, item) => {
-      return sum + (checklist[item.id] ? 1 : 0);
-    }, 0);
-    sectionScores[section.id] = {
-      score: sectionTotal,
-      max: section.items.length,
-      title: section.title
-    };
-  });
-  return sectionScores;
-}
-
 // --- View Components ---
 // These are defined at module level to prevent recreation on every render
 
 function LandingView({ formData, setFormData, onStartScoring, onViewDashboard }) {
-  const schoolOptions = formData.program === 'propel' ? PROPEL_SCHOOLS :
-                        formData.program === 'levelup' ? LEVEL_UP_SCHOOLS : [];
-
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
       <div className="text-center mb-8">
@@ -233,44 +209,23 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
           <div className="relative">
-            <ClipboardCheck className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+            <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
             <select
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
-              value={formData.program}
-              onChange={e => setFormData({...formData, program: e.target.value, schoolSection: ''})}
+              value={formData.schoolSection}
+              onChange={e => setFormData({...formData, schoolSection: e.target.value})}
             >
-              <option value="" disabled>Select a program</option>
-              {PROGRAMS.map((prog) => (
-                <option key={prog.id} value={prog.id}>
-                  {prog.label}
+              <option value="" disabled>Select a section</option>
+              {SCHOOL_SECTIONS.map((section) => (
+                <option key={section} value={section}>
+                  {section}
                 </option>
               ))}
             </select>
           </div>
         </div>
-
-        {formData.program && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
-            <div className="relative">
-              <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
-              <select
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
-                value={formData.schoolSection}
-                onChange={e => setFormData({...formData, schoolSection: e.target.value})}
-              >
-                <option value="" disabled>Select a school</option>
-                {schoolOptions.map((school) => (
-                  <option key={school} value={school}>
-                    {school}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
@@ -288,7 +243,7 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
 
         <button
           onClick={onStartScoring}
-          disabled={!formData.judgeName || !formData.teamName || !formData.program || !formData.schoolSection}
+          disabled={!formData.judgeName || !formData.teamName}
           className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           Start Scoring <ChevronRight className="w-5 h-5" />
@@ -401,50 +356,203 @@ function ScoringView({
   );
 }
 
-function DashboardView({ submittedData, onScoreNewTeam, onExportCSV }) {
-  // Group scores by program, then by school
-  const groupedByProgram = useMemo(() => {
-    const programs = {
-      propel: { label: 'Propel', schools: {} },
-      levelup: { label: 'Level Up', schools: {} }
-    };
+function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEntry, onUpdateEntry }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // Group scores by section
+  const groupedData = useMemo(() => {
+    const groups = {};
     submittedData.forEach(item => {
-      const program = item.program || 'propel'; // Default to propel for legacy data
-      const school = item.schoolSection || 'Unassigned';
-
-      if (!programs[program]) {
-        programs[program] = { label: program, schools: {} };
-      }
-      if (!programs[program].schools[school]) {
-        programs[program].schools[school] = [];
-      }
-      programs[program].schools[school].push(item);
+      const section = item.schoolSection || 'Unassigned';
+      if (!groups[section]) groups[section] = [];
+      groups[section].push(item);
     });
-
-    return programs;
+    return groups;
   }, [submittedData]);
 
-  // Calculate section score for display (handles legacy data without sectionScores)
-  const getSectionScore = (row, sectionId) => {
-    if (row.sectionScores && row.sectionScores[sectionId]) {
-      return row.sectionScores[sectionId].score;
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (password === DASHBOARD_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError('');
+    } else {
+      setPasswordError('Incorrect password');
     }
-    // Fallback: calculate from checklist for legacy data
-    if (row.checklist) {
-      const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
-      if (section) {
-        return section.items.reduce((sum, item) => sum + (row.checklist[item.id] ? 1 : 0), 0);
-      }
-    }
-    return 0;
   };
 
-  const propelCount = Object.values(groupedByProgram.propel.schools).flat().length;
-  const levelupCount = Object.values(groupedByProgram.levelup.schools).flat().length;
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setEditForm({
+      teamName: entry.teamName,
+      judgeName: entry.judgeName,
+      schoolSection: entry.schoolSection,
+      totalScore: entry.totalScore
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingEntry && onUpdateEntry) {
+      await onUpdateEntry(editingEntry.id, editForm);
+      setEditingEntry(null);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (onDeleteEntry) {
+      await onDeleteEntry(id);
+      setDeleteConfirm(null);
+    }
+  };
+
+  // Password prompt screen
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
+        <div className="text-center mb-8">
+          <Lock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard Access</h1>
+          <p className="text-gray-500">Enter password to view and manage scores</p>
+        </div>
+
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter dashboard password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoFocus
+            />
+            {passwordError && (
+              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            Access Dashboard
+          </button>
+
+          <div className="mt-6 pt-6 border-t text-center">
+            <button
+              type="button"
+              onClick={onScoreNewTeam}
+              className="text-gray-500 hover:text-blue-600 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+            >
+              <ChevronLeft className="w-4 h-4" /> Back to Scoring
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      {/* Edit Modal */}
+      {editingEntry && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Edit Entry</h2>
+              <button onClick={() => setEditingEntry(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editForm.teamName}
+                  onChange={e => setEditForm({...editForm, teamName: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Judge Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editForm.judgeName}
+                  onChange={e => setEditForm({...editForm, judgeName: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editForm.schoolSection}
+                  onChange={e => setEditForm({...editForm, schoolSection: e.target.value})}
+                >
+                  {SCHOOL_SECTIONS.map(school => (
+                    <option key={school} value={school}>{school}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Score</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editForm.totalScore}
+                  onChange={e => setEditForm({...editForm, totalScore: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={() => setEditingEntry(null)}
+                  className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Delete Entry?</h2>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete the score for <strong>{deleteConfirm.teamName}</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm.id)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Judging Dashboard</h1>
@@ -467,137 +575,73 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV }) {
         </div>
       </div>
 
-      {submittedData.length === 0 ? (
+      {Object.keys(groupedData).length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
           <h3 className="text-gray-500 font-medium">No scores submitted yet</h3>
           <p className="text-gray-400 text-sm">Scores will appear here in real-time</p>
         </div>
       ) : (
-        <div className="space-y-10">
-          {/* Propel Section */}
-          {propelCount > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5" /> Propel
-                <span className="text-sm font-normal text-gray-500">({propelCount} teams)</span>
-              </h2>
-              <div className="space-y-6">
-                {Object.entries(groupedByProgram.propel.schools).map(([school, items]) => (
-                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="bg-blue-50 px-6 py-3 border-b flex justify-between items-center">
-                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                        <School className="w-4 h-4" /> {school}
-                      </h3>
-                      <span className="text-xs bg-blue-100 px-2 py-1 rounded-full text-blue-700">
-                        {items.length} teams
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-500">
-                          <tr>
-                            <th className="px-4 py-3 font-medium">Team</th>
-                            <th className="px-4 py-3 font-medium">Judge</th>
-                            {RUBRIC_SECTIONS.map(section => (
-                              <th key={section.id} className="px-2 py-3 font-medium text-center text-xs" title={section.title}>
-                                {section.title.split(' ')[0].substring(0, 6)}
-                              </th>
-                            ))}
-                            <th className="px-4 py-3 font-medium text-right">Total</th>
-                            <th className="px-4 py-3 font-medium text-right">Time</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {items.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-800">{row.teamName}</td>
-                              <td className="px-4 py-3 text-gray-500 text-xs">{row.judgeName}</td>
-                              {RUBRIC_SECTIONS.map(section => (
-                                <td key={section.id} className="px-2 py-3 text-center text-xs text-gray-600">
-                                  {getSectionScore(row, section.id)}
-                                </td>
-                              ))}
-                              <td className="px-4 py-3 text-right">
-                                <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
-                                  {row.totalScore}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right text-gray-400 text-xs">
-                                {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
+        <div className="space-y-8">
+          {Object.entries(groupedData).map(([section, items]) => (
+            <div key={section} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-gray-100 px-6 py-3 border-b flex justify-between items-center">
+                <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                  <School className="w-4 h-4" /> {section}
+                </h2>
+                <span className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600">
+                  {items.length} teams
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="px-6 py-3 font-medium">Team</th>
+                      <th className="px-6 py-3 font-medium">Judge</th>
+                      <th className="px-6 py-3 font-medium text-right">Score</th>
+                      <th className="px-6 py-3 font-medium text-right">Time</th>
+                      <th className="px-6 py-3 font-medium text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {items.map((row) => (
+                      <tr key={row.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-3 font-medium text-gray-800">{row.teamName}</td>
+                        <td className="px-6 py-3 text-gray-500">{row.judgeName}</td>
+                        <td className="px-6 py-3 text-right">
+                          <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                            {row.totalScore}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-right text-gray-400 text-xs">
+                          {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                        </td>
+                        <td className="px-6 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleEdit(row)}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(row)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-
-          {/* Level Up Section */}
-          {levelupCount > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5" /> Level Up
-                <span className="text-sm font-normal text-gray-500">({levelupCount} teams)</span>
-              </h2>
-              <div className="space-y-6">
-                {Object.entries(groupedByProgram.levelup.schools).map(([school, items]) => (
-                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="bg-purple-50 px-6 py-3 border-b flex justify-between items-center">
-                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                        <School className="w-4 h-4" /> {school}
-                      </h3>
-                      <span className="text-xs bg-purple-100 px-2 py-1 rounded-full text-purple-700">
-                        {items.length} teams
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-500">
-                          <tr>
-                            <th className="px-4 py-3 font-medium">Team</th>
-                            <th className="px-4 py-3 font-medium">Judge</th>
-                            {RUBRIC_SECTIONS.map(section => (
-                              <th key={section.id} className="px-2 py-3 font-medium text-center text-xs" title={section.title}>
-                                {section.title.split(' ')[0].substring(0, 6)}
-                              </th>
-                            ))}
-                            <th className="px-4 py-3 font-medium text-right">Total</th>
-                            <th className="px-4 py-3 font-medium text-right">Time</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {items.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-800">{row.teamName}</td>
-                              <td className="px-4 py-3 text-gray-500 text-xs">{row.judgeName}</td>
-                              {RUBRIC_SECTIONS.map(section => (
-                                <td key={section.id} className="px-2 py-3 text-center text-xs text-gray-600">
-                                  {getSectionScore(row, section.id)}
-                                </td>
-                              ))}
-                              <td className="px-4 py-3 text-right">
-                                <span className="bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded">
-                                  {row.totalScore}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right text-gray-400 text-xs">
-                                {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
@@ -610,7 +654,6 @@ export default function RubricApp() {
   const [view, setView] = useState('landing'); // landing, scoring, dashboard
   const [formData, setFormData] = useState({
     judgeName: '',
-    program: '',
     schoolSection: '',
     teamName: ''
   });
@@ -695,11 +738,9 @@ export default function RubricApp() {
 
     try {
       const finalScore = calculateTotal();
-      const sectionScores = calculateSectionScores(checklist);
       const payload = {
         ...formData,
         checklist,
-        sectionScores,
         totalScore: finalScore,
         maxPossible: getMaxPoints(),
         timestamp: serverTimestamp(),
@@ -720,34 +761,34 @@ export default function RubricApp() {
     }
   };
 
+  const handleDeleteEntry = async (id) => {
+    if (!db) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'scores', id));
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      alert("Error deleting entry. Please try again.");
+    }
+  };
+
+  const handleUpdateEntry = async (id, updates) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'scores', id), updates);
+    } catch (error) {
+      console.error("Error updating entry:", error);
+      alert("Error updating entry. Please try again.");
+    }
+  };
+
   const exportToCSV = () => {
     if (submittedData.length === 0) return;
-
-    // Build headers with section names
-    const sectionHeaders = RUBRIC_SECTIONS.map(s => s.title);
-    const headers = ['Program', 'School', 'Team Name', 'Judge', ...sectionHeaders, 'Total Score', 'Max Points', 'Timestamp'];
-
-    // Helper to get section score (handles legacy data)
-    const getSectionScore = (row, sectionId) => {
-      if (row.sectionScores && row.sectionScores[sectionId]) {
-        return row.sectionScores[sectionId].score;
-      }
-      if (row.checklist) {
-        const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
-        if (section) {
-          return section.items.reduce((sum, item) => sum + (row.checklist[item.id] ? 1 : 0), 0);
-        }
-      }
-      return 0;
-    };
-
+    const headers = ['School/Section', 'Team Name', 'Judge', 'Total Score', 'Max Points', 'Timestamp'];
     const csvContent = [
       headers.join(','),
       ...submittedData.map(row => {
         const date = row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleString() : '';
-        const program = row.program === 'levelup' ? 'Level Up' : 'Propel';
-        const sectionScores = RUBRIC_SECTIONS.map(s => getSectionScore(row, s.id));
-        return `"${program}","${row.schoolSection}","${row.teamName}","${row.judgeName}",${sectionScores.join(',')},${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
+        return `"${row.schoolSection}","${row.teamName}","${row.judgeName}",${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
       })
     ].join('\n');
 
@@ -808,6 +849,8 @@ export default function RubricApp() {
           submittedData={submittedData}
           onScoreNewTeam={() => setView('landing')}
           onExportCSV={exportToCSV}
+          onDeleteEntry={handleDeleteEntry}
+          onUpdateEntry={handleUpdateEntry}
         />
       )}
     </div>
