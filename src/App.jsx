@@ -69,7 +69,7 @@ if (isFirebaseConfigValid) {
 const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 
 // --- Constants ---
-const SCHOOL_SECTIONS = [
+const PROPEL_SCHOOLS = [
   "Frederick Douglas",
   "Forest Grove",
   "Guilford",
@@ -80,6 +80,20 @@ const SCHOOL_SECTIONS = [
   "Rolling Ridge",
   "Sugarland",
   "Sully"
+];
+
+const LEVEL_UP_SCHOOLS = [
+  "Seneca Ridge",
+  "Smarts Mill",
+  "Sterling",
+  "Harper Park",
+  "Simpson",
+  "River Bend"
+];
+
+const PROGRAMS = [
+  { id: 'propel', label: 'Propel' },
+  { id: 'levelup', label: 'Level Up' }
 ];
 
 // --- Simplified Rubric Data Structure (Checklist Only) ---
@@ -171,10 +185,30 @@ const RUBRIC_SECTIONS = [
   }
 ];
 
+// --- Helper Functions ---
+// Calculate scores for each rubric section from a checklist
+function calculateSectionScores(checklist) {
+  const sectionScores = {};
+  RUBRIC_SECTIONS.forEach(section => {
+    const sectionTotal = section.items.reduce((sum, item) => {
+      return sum + (checklist[item.id] ? 1 : 0);
+    }, 0);
+    sectionScores[section.id] = {
+      score: sectionTotal,
+      max: section.items.length,
+      title: section.title
+    };
+  });
+  return sectionScores;
+}
+
 // --- View Components ---
 // These are defined at module level to prevent recreation on every render
 
 function LandingView({ formData, setFormData, onStartScoring, onViewDashboard }) {
+  const schoolOptions = formData.program === 'propel' ? PROPEL_SCHOOLS :
+                        formData.program === 'levelup' ? LEVEL_UP_SCHOOLS : [];
+
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
       <div className="text-center mb-8">
@@ -199,23 +233,44 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">School / Section</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
           <div className="relative">
-            <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+            <ClipboardCheck className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
             <select
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
-              value={formData.schoolSection}
-              onChange={e => setFormData({...formData, schoolSection: e.target.value})}
+              value={formData.program}
+              onChange={e => setFormData({...formData, program: e.target.value, schoolSection: ''})}
             >
-              <option value="" disabled>Select a section</option>
-              {SCHOOL_SECTIONS.map((section) => (
-                <option key={section} value={section}>
-                  {section}
+              <option value="" disabled>Select a program</option>
+              {PROGRAMS.map((prog) => (
+                <option key={prog.id} value={prog.id}>
+                  {prog.label}
                 </option>
               ))}
             </select>
           </div>
         </div>
+
+        {formData.program && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
+            <div className="relative">
+              <School className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+              <select
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
+                value={formData.schoolSection}
+                onChange={e => setFormData({...formData, schoolSection: e.target.value})}
+              >
+                <option value="" disabled>Select a school</option>
+                {schoolOptions.map((school) => (
+                  <option key={school} value={school}>
+                    {school}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
@@ -233,7 +288,7 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
 
         <button
           onClick={onStartScoring}
-          disabled={!formData.judgeName || !formData.teamName}
+          disabled={!formData.judgeName || !formData.teamName || !formData.program || !formData.schoolSection}
           className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           Start Scoring <ChevronRight className="w-5 h-5" />
@@ -347,19 +402,49 @@ function ScoringView({
 }
 
 function DashboardView({ submittedData, onScoreNewTeam, onExportCSV }) {
-  // Group scores by section - useMemo now works correctly at module level
-  const groupedData = useMemo(() => {
-    const groups = {};
+  // Group scores by program, then by school
+  const groupedByProgram = useMemo(() => {
+    const programs = {
+      propel: { label: 'Propel', schools: {} },
+      levelup: { label: 'Level Up', schools: {} }
+    };
+
     submittedData.forEach(item => {
-      const section = item.schoolSection || 'Unassigned';
-      if (!groups[section]) groups[section] = [];
-      groups[section].push(item);
+      const program = item.program || 'propel'; // Default to propel for legacy data
+      const school = item.schoolSection || 'Unassigned';
+
+      if (!programs[program]) {
+        programs[program] = { label: program, schools: {} };
+      }
+      if (!programs[program].schools[school]) {
+        programs[program].schools[school] = [];
+      }
+      programs[program].schools[school].push(item);
     });
-    return groups;
+
+    return programs;
   }, [submittedData]);
 
+  // Calculate section score for display (handles legacy data without sectionScores)
+  const getSectionScore = (row, sectionId) => {
+    if (row.sectionScores && row.sectionScores[sectionId]) {
+      return row.sectionScores[sectionId].score;
+    }
+    // Fallback: calculate from checklist for legacy data
+    if (row.checklist) {
+      const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
+      if (section) {
+        return section.items.reduce((sum, item) => sum + (row.checklist[item.id] ? 1 : 0), 0);
+      }
+    }
+    return 0;
+  };
+
+  const propelCount = Object.values(groupedByProgram.propel.schools).flat().length;
+  const levelupCount = Object.values(groupedByProgram.levelup.schools).flat().length;
+
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Judging Dashboard</h1>
@@ -382,54 +467,137 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV }) {
         </div>
       </div>
 
-      {Object.keys(groupedData).length === 0 ? (
+      {submittedData.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <ClipboardCheck className="w-12 h-12 mx-auto text-gray-300 mb-2" />
           <h3 className="text-gray-500 font-medium">No scores submitted yet</h3>
           <p className="text-gray-400 text-sm">Scores will appear here in real-time</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedData).map(([section, items]) => (
-            <div key={section} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="bg-gray-100 px-6 py-3 border-b flex justify-between items-center">
-                <h2 className="font-bold text-gray-700 flex items-center gap-2">
-                  <School className="w-4 h-4" /> {section}
-                </h2>
-                <span className="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600">
-                  {items.length} teams
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-500">
-                    <tr>
-                      <th className="px-6 py-3 font-medium">Team</th>
-                      <th className="px-6 py-3 font-medium">Judge</th>
-                      <th className="px-6 py-3 font-medium text-right">Score</th>
-                      <th className="px-6 py-3 font-medium text-right">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {items.map((row) => (
-                      <tr key={row.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-medium text-gray-800">{row.teamName}</td>
-                        <td className="px-6 py-3 text-gray-500">{row.judgeName}</td>
-                        <td className="px-6 py-3 text-right">
-                          <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
-                            {row.totalScore}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-right text-gray-400 text-xs">
-                          {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="space-y-10">
+          {/* Propel Section */}
+          {propelCount > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5" /> Propel
+                <span className="text-sm font-normal text-gray-500">({propelCount} teams)</span>
+              </h2>
+              <div className="space-y-6">
+                {Object.entries(groupedByProgram.propel.schools).map(([school, items]) => (
+                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div className="bg-blue-50 px-6 py-3 border-b flex justify-between items-center">
+                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                        <School className="w-4 h-4" /> {school}
+                      </h3>
+                      <span className="text-xs bg-blue-100 px-2 py-1 rounded-full text-blue-700">
+                        {items.length} teams
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3 font-medium">Team</th>
+                            <th className="px-4 py-3 font-medium">Judge</th>
+                            {RUBRIC_SECTIONS.map(section => (
+                              <th key={section.id} className="px-2 py-3 font-medium text-center text-xs" title={section.title}>
+                                {section.title.split(' ')[0].substring(0, 6)}
+                              </th>
+                            ))}
+                            <th className="px-4 py-3 font-medium text-right">Total</th>
+                            <th className="px-4 py-3 font-medium text-right">Time</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {items.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-800">{row.teamName}</td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">{row.judgeName}</td>
+                              {RUBRIC_SECTIONS.map(section => (
+                                <td key={section.id} className="px-2 py-3 text-center text-xs text-gray-600">
+                                  {getSectionScore(row, section.id)}
+                                </td>
+                              ))}
+                              <td className="px-4 py-3 text-right">
+                                <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                                  {row.totalScore}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right text-gray-400 text-xs">
+                                {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Level Up Section */}
+          {levelupCount > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5" /> Level Up
+                <span className="text-sm font-normal text-gray-500">({levelupCount} teams)</span>
+              </h2>
+              <div className="space-y-6">
+                {Object.entries(groupedByProgram.levelup.schools).map(([school, items]) => (
+                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div className="bg-purple-50 px-6 py-3 border-b flex justify-between items-center">
+                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                        <School className="w-4 h-4" /> {school}
+                      </h3>
+                      <span className="text-xs bg-purple-100 px-2 py-1 rounded-full text-purple-700">
+                        {items.length} teams
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3 font-medium">Team</th>
+                            <th className="px-4 py-3 font-medium">Judge</th>
+                            {RUBRIC_SECTIONS.map(section => (
+                              <th key={section.id} className="px-2 py-3 font-medium text-center text-xs" title={section.title}>
+                                {section.title.split(' ')[0].substring(0, 6)}
+                              </th>
+                            ))}
+                            <th className="px-4 py-3 font-medium text-right">Total</th>
+                            <th className="px-4 py-3 font-medium text-right">Time</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {items.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-800">{row.teamName}</td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">{row.judgeName}</td>
+                              {RUBRIC_SECTIONS.map(section => (
+                                <td key={section.id} className="px-2 py-3 text-center text-xs text-gray-600">
+                                  {getSectionScore(row, section.id)}
+                                </td>
+                              ))}
+                              <td className="px-4 py-3 text-right">
+                                <span className="bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded">
+                                  {row.totalScore}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right text-gray-400 text-xs">
+                                {row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -442,6 +610,7 @@ export default function RubricApp() {
   const [view, setView] = useState('landing'); // landing, scoring, dashboard
   const [formData, setFormData] = useState({
     judgeName: '',
+    program: '',
     schoolSection: '',
     teamName: ''
   });
@@ -526,9 +695,11 @@ export default function RubricApp() {
 
     try {
       const finalScore = calculateTotal();
+      const sectionScores = calculateSectionScores(checklist);
       const payload = {
         ...formData,
         checklist,
+        sectionScores,
         totalScore: finalScore,
         maxPossible: getMaxPoints(),
         timestamp: serverTimestamp(),
@@ -551,12 +722,32 @@ export default function RubricApp() {
 
   const exportToCSV = () => {
     if (submittedData.length === 0) return;
-    const headers = ['School/Section', 'Team Name', 'Judge', 'Total Score', 'Max Points', 'Timestamp'];
+
+    // Build headers with section names
+    const sectionHeaders = RUBRIC_SECTIONS.map(s => s.title);
+    const headers = ['Program', 'School', 'Team Name', 'Judge', ...sectionHeaders, 'Total Score', 'Max Points', 'Timestamp'];
+
+    // Helper to get section score (handles legacy data)
+    const getSectionScore = (row, sectionId) => {
+      if (row.sectionScores && row.sectionScores[sectionId]) {
+        return row.sectionScores[sectionId].score;
+      }
+      if (row.checklist) {
+        const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
+        if (section) {
+          return section.items.reduce((sum, item) => sum + (row.checklist[item.id] ? 1 : 0), 0);
+        }
+      }
+      return 0;
+    };
+
     const csvContent = [
       headers.join(','),
       ...submittedData.map(row => {
         const date = row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleString() : '';
-        return `"${row.schoolSection}","${row.teamName}","${row.judgeName}",${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
+        const program = row.program === 'levelup' ? 'Level Up' : 'Propel';
+        const sectionScores = RUBRIC_SECTIONS.map(s => getSectionScore(row, s.id));
+        return `"${program}","${row.schoolSection}","${row.teamName}","${row.judgeName}",${sectionScores.join(',')},${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
       })
     ].join('\n');
 
