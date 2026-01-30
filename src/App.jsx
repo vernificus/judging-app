@@ -39,15 +39,34 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
+// Check if Firebase config is valid before initializing
+const isFirebaseConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
 
-// Initialize Analytics (optional - only in production)
-if (import.meta.env.PROD && import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
-  getAnalytics(app);
+let app = null;
+let auth = null;
+let db = null;
+let firebaseError = null;
+
+if (isFirebaseConfigValid) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    // Initialize Analytics (optional - only in production)
+    if (import.meta.env.PROD && import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
+      getAnalytics(app);
+    }
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+    firebaseError = error.message;
+  }
+} else {
+  console.error("Firebase config is missing required values:", firebaseConfig);
+  firebaseError = "Firebase configuration is incomplete. Check environment variables.";
 }
+
+const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 
 // --- Constants ---
 const SCHOOL_SECTIONS = [
@@ -434,6 +453,8 @@ export default function RubricApp() {
 
   // --- Auth & Data Fetching ---
   useEffect(() => {
+    if (!auth) return; // Skip if Firebase not initialized
+
     const initAuth = async () => {
       try {
         await signInAnonymously(auth);
@@ -450,7 +471,7 @@ export default function RubricApp() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return; // Skip if Firebase not initialized
 
     const q = query(
       collection(db, 'artifacts', appId, 'public', 'data', 'scores'),
@@ -497,7 +518,7 @@ export default function RubricApp() {
   };
 
   const handleSubmit = async () => {
-    if (!user) {
+    if (!user || !db) {
       alert("Please wait for authentication to complete.");
       return;
     }
@@ -549,6 +570,25 @@ export default function RubricApp() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  // Show error screen if Firebase failed to initialize
+  if (firebaseError) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-6 text-center">
+          <div className="text-red-500 text-5xl mb-4">!</div>
+          <h1 className="text-xl font-bold text-gray-800 mb-2">Configuration Error</h1>
+          <p className="text-gray-600 mb-4">
+            The app could not connect to the database. Please check that the environment variables are configured correctly.
+          </p>
+          <details className="text-left text-sm text-gray-500 bg-gray-50 p-3 rounded">
+            <summary className="cursor-pointer font-medium">Technical Details</summary>
+            <pre className="mt-2 whitespace-pre-wrap break-words">{firebaseError}</pre>
+          </details>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
