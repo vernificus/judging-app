@@ -31,6 +31,7 @@ jobs:
           echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
           echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
           echo "VITE_APP_ID=${{ secrets.VITE_APP_ID }}" >> .env
+          echo "VITE_DASHBOARD_PASSWORD=${{ secrets.VITE_DASHBOARD_PASSWORD }}" >> .env
 
       - name: Build project
         run: npm run build
