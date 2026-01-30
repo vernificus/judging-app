@@ -70,7 +70,7 @@ const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 
 // --- Constants ---
 const SCHOOL_SECTIONS = [
-  "Frederick Douglas",
+  "Frederick Douglass",
   "Forest Grove",
   "Guilford",
   "Leesburg",
