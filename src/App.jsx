@@ -181,6 +181,16 @@ const RUBRIC_SECTIONS = [
   }
 ];
 
+// --- Helper Functions ---
+// Get the score for a specific section from a submission's checklist
+const getSectionScore = (submission, sectionId) => {
+  const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
+  if (!section || !submission.checklist) return 0;
+  return section.items.reduce((sum, item) => {
+    return sum + (submission.checklist[item.id] ? 1 : 0);
+  }, 0);
+};
+
 // --- View Components ---
 // These are defined at module level to prevent recreation on every render
 
@@ -373,6 +383,34 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
       groups[section].push(item);
     });
     return groups;
+  }, [submittedData]);
+
+  // Calculate section summaries for all submissions
+  const sectionSummary = useMemo(() => {
+    if (submittedData.length === 0) return null;
+
+    const summary = {
+      totalSubmissions: submittedData.length,
+      overallTotal: 0,
+      overallMax: 0,
+      sections: []
+    };
+
+    RUBRIC_SECTIONS.forEach(section => {
+      const sectionTotal = submittedData.reduce((sum, row) => sum + getSectionScore(row, section.id), 0);
+      const sectionMax = section.items.length * submittedData.length;
+      summary.sections.push({
+        id: section.id,
+        title: section.title,
+        total: sectionTotal,
+        max: sectionMax,
+        itemCount: section.items.length
+      });
+      summary.overallTotal += sectionTotal;
+      summary.overallMax += sectionMax;
+    });
+
+    return summary;
   }, [submittedData]);
 
   const handlePasswordSubmit = (e) => {
@@ -574,6 +612,54 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
           </button>
         </div>
       </div>
+
+      {/* Section Score Summary */}
+      {sectionSummary && (
+        <div className="mb-8 bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div className="bg-blue-50 px-6 py-3 border-b">
+            <h2 className="font-bold text-gray-700 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-500" /> Score Summary
+            </h2>
+            <p className="text-sm text-gray-500">Aggregate scores across all {sectionSummary.totalSubmissions} submissions</p>
+          </div>
+          <div className="p-4">
+            {/* Overall Score */}
+            <div className="mb-4 p-4 bg-blue-100 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-blue-800">Overall Total</span>
+                <span className="text-2xl font-bold text-blue-700">
+                  {sectionSummary.overallTotal} <span className="text-sm font-normal text-blue-500">/ {sectionSummary.overallMax}</span>
+                </span>
+              </div>
+              <div className="mt-2 h-2 bg-blue-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 transition-all"
+                  style={{ width: `${sectionSummary.overallMax > 0 ? (sectionSummary.overallTotal / sectionSummary.overallMax) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Section Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {sectionSummary.sections.map(section => (
+                <div key={section.id} className="p-3 bg-gray-50 rounded-lg border">
+                  <div className="text-xs text-gray-500 mb-1 truncate" title={section.title}>{section.title}</div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-gray-800">{section.total}</span>
+                    <span className="text-xs text-gray-400">/ {section.max}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 transition-all"
+                      style={{ width: `${section.max > 0 ? (section.total / section.max) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {Object.keys(groupedData).length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
