@@ -333,8 +333,8 @@ function ScoringView({
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-500 transition-all duration-500"
-            style={{ width: `${(currentTotal / maxPoints) * 100}%` }}
+            className="h-full bg-blue-500 transition-transform duration-500 w-full origin-left"
+            style={{ transform: `scaleX(${(currentTotal / maxPoints) || 0})` }}
           />
         </div>
       </div>
