@@ -27,6 +27,8 @@ import {
   Save,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   ListTodo,
   Trash2,
   Pencil,
@@ -450,25 +452,60 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
   const [editForm, setEditForm] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Group scores by program, then by school
+  // Track which schools and teams are expanded
+  const [expandedSchools, setExpandedSchools] = useState({});
+  const [expandedTeams, setExpandedTeams] = useState({});
+
+  const toggleSchool = (key) => setExpandedSchools(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleTeam = (key) => setExpandedTeams(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // Group scores by program > school > team, compute averages
   const { propelData, levelupData } = useMemo(() => {
-    const propel = {};
-    const levelup = {};
+    const buildProgramData = (data) => {
+      const schools = {};
+      data.forEach(item => {
+        const school = item.schoolSection || 'Unassigned';
+        if (!schools[school]) schools[school] = {};
+        const team = item.teamName || 'Unknown';
+        if (!schools[school][team]) schools[school][team] = [];
+        schools[school][team].push(item);
+      });
 
-    submittedData.forEach(item => {
-      const school = item.schoolSection || 'Unassigned';
-      const program = item.program || 'propel'; // Default to propel for legacy data
+      // Compute averages per team
+      const result = {};
+      Object.entries(schools).forEach(([school, teams]) => {
+        result[school] = Object.entries(teams).map(([teamName, entries]) => {
+          const count = entries.length;
+          const avg = (sectionId) => {
+            const sum = entries.reduce((s, e) => s + getSectionScore(e, sectionId), 0);
+            return Math.round((sum / count) * 10) / 10;
+          };
+          const avgTotal = Math.round((entries.reduce((s, e) => s + (e.totalScore || 0), 0) / count) * 10) / 10;
+          return {
+            teamName,
+            entries,
+            count,
+            avgPitch: avg('pitch'),
+            avgSolution: avg('solution'),
+            avgModel: avg('model'),
+            avgScience: avg('bonus_terms'),
+            avgAuto: avg('bonus_auto'),
+            avgDrone: avg('drone_demo'),
+            avgPres: avg('overall'),
+            avgTotal
+          };
+        });
+      });
+      return result;
+    };
 
-      if (program === 'levelup') {
-        if (!levelup[school]) levelup[school] = [];
-        levelup[school].push(item);
-      } else {
-        if (!propel[school]) propel[school] = [];
-        propel[school].push(item);
-      }
-    });
+    const propelItems = submittedData.filter(i => (i.program || 'propel') !== 'levelup');
+    const levelupItems = submittedData.filter(i => i.program === 'levelup');
 
-    return { propelData: propel, levelupData: levelup };
+    return {
+      propelData: buildProgramData(propelItems),
+      levelupData: buildProgramData(levelupItems)
+    };
   }, [submittedData]);
 
   const handlePasswordSubmit = (e) => {
@@ -706,193 +743,148 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
         </div>
       ) : (
         <div className="space-y-10">
-          {/* Propel Section */}
-          {Object.keys(propelData).length > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-blue-600" /> Propel
+          {[
+            { label: 'Propel', data: propelData, styles: {
+              heading: 'text-blue-800', headingIcon: 'text-blue-600',
+              schoolBg: 'bg-blue-50 hover:bg-blue-100', badge: 'bg-blue-100 text-blue-600',
+              avgHighlight: 'bg-blue-50/30', totalBadge: 'bg-blue-100 text-blue-700'
+            }},
+            { label: 'Level Up', data: levelupData, styles: {
+              heading: 'text-green-800', headingIcon: 'text-green-600',
+              schoolBg: 'bg-green-50 hover:bg-green-100', badge: 'bg-green-100 text-green-600',
+              avgHighlight: 'bg-green-50/30', totalBadge: 'bg-green-100 text-green-700'
+            }}
+          ].filter(({ data }) => Object.keys(data).length > 0).map(({ label, data, styles }) => (
+            <div key={label}>
+              <h2 className={`text-xl font-bold ${styles.heading} mb-4 flex items-center gap-2`}>
+                <Trophy className={`w-5 h-5 ${styles.headingIcon}`} /> {label}
               </h2>
-              <div className="space-y-6">
-                {Object.entries(propelData).map(([school, items]) => (
-                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="bg-blue-50 px-6 py-3 border-b flex justify-between items-center">
-                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                        <School className="w-4 h-4" /> {school}
-                      </h3>
-                      <span className="text-xs bg-blue-100 px-2 py-1 rounded-full text-blue-600">
-                        {items.length} teams
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-500">
-                          <tr>
-                            <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
-                            <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
-                            <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {items.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
-                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
-                              </td>
-                              <td className="px-3 py-3 text-center">
-                                <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
-                                  {row.totalScore}
-                                </span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <button
-                                    onClick={() => handleEdit(row)}
-                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteConfirm(row)}
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+              <div className="space-y-4">
+                {Object.entries(data).map(([school, teams]) => {
+                  const schoolKey = `${label}-${school}`;
+                  const isSchoolOpen = expandedSchools[schoolKey] !== false; // default open
+                  const totalSubmissions = teams.reduce((s, t) => s + t.count, 0);
+                  return (
+                    <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                      <button
+                        onClick={() => toggleSchool(schoolKey)}
+                        className={`w-full ${styles.schoolBg} px-6 py-3 border-b flex justify-between items-center cursor-pointer transition`}
+                      >
+                        <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                          <School className="w-4 h-4" />
+                          {getSchoolAbbr(school)} - {school}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs ${styles.badge} px-2 py-1 rounded-full`}>
+                            {teams.length} teams &middot; {totalSubmissions} scores
+                          </span>
+                          {isSchoolOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                        </div>
+                      </button>
 
-          {/* Level Up Section */}
-          {Object.keys(levelupData).length > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-green-600" /> Level Up
-              </h2>
-              <div className="space-y-6">
-                {Object.entries(levelupData).map(([school, items]) => (
-                  <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="bg-green-50 px-6 py-3 border-b flex justify-between items-center">
-                      <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                        <School className="w-4 h-4" /> {school}
-                      </h3>
-                      <span className="text-xs bg-green-100 px-2 py-1 rounded-full text-green-600">
-                        {items.length} teams
-                      </span>
+                      {isSchoolOpen && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm">
+                            <thead className="bg-gray-50 text-gray-500">
+                              <tr>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap w-8"></th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
+                                <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {teams.map((team) => {
+                                const teamKey = `${schoolKey}-${team.teamName}`;
+                                const isTeamOpen = expandedTeams[teamKey] || false;
+                                return (
+                                  <React.Fragment key={team.teamName}>
+                                    {/* Average row */}
+                                    <tr
+                                      className={`cursor-pointer hover:bg-gray-50 ${isTeamOpen ? styles.avgHighlight : ''}`}
+                                      onClick={() => toggleTeam(teamKey)}
+                                    >
+                                      <td className="px-4 py-3 text-center">
+                                        {isTeamOpen
+                                          ? <ChevronUp className="w-4 h-4 text-gray-400 inline" />
+                                          : <ChevronDown className="w-4 h-4 text-gray-400 inline" />}
+                                      </td>
+                                      <td className="px-4 py-3 font-bold text-gray-800 whitespace-nowrap">{team.teamName}</td>
+                                      <td className="px-4 py-3 text-gray-400 whitespace-nowrap italic">
+                                        avg of {team.count} {team.count === 1 ? 'judge' : 'judges'}
+                                      </td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPitch}/6</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgSolution}/5</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgModel}/6</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgScience}/8</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgAuto}/2</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgDrone}/6</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPres}/3</td>
+                                      <td className="px-3 py-3 text-center">
+                                        <span className={`${styles.totalBadge} font-bold px-2 py-1 rounded`}>
+                                          {team.avgTotal}
+                                        </span>
+                                      </td>
+                                      <td className="px-2 py-3 text-center"></td>
+                                    </tr>
+
+                                    {/* Individual judge rows (expanded) */}
+                                    {isTeamOpen && team.entries.map((row) => (
+                                      <tr key={row.id} className="bg-gray-50/50 hover:bg-gray-100/50">
+                                        <td className="px-4 py-2"></td>
+                                        <td className="px-4 py-2 text-gray-500 text-xs whitespace-nowrap pl-8">{row.teamName}</td>
+                                        <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'pitch')}/6</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'solution')}/5</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'model')}/6</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_terms')}/8</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_auto')}/2</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'drone_demo')}/6</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'overall')}/3</td>
+                                        <td className="px-3 py-2 text-center">
+                                          <span className="text-gray-600 font-medium">{row.totalScore}</span>
+                                        </td>
+                                        <td className="px-2 py-2 text-center">
+                                          <div className="flex items-center justify-center gap-1">
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleEdit(row); }}
+                                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                              title="Edit"
+                                            >
+                                              <Pencil className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setDeleteConfirm(row); }}
+                                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                              title="Delete"
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-500">
-                          <tr>
-                            <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
-                            <th className="px-4 py-3 font-medium whitespace-nowrap">Judge</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Pitch (Shark Tank)">Pitch</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Solution">Solution</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="The Habitat Model">Model</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Science Words">Science</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Bonus: Automation">Auto</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
-                            <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
-                            <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {items.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.teamName}</td>
-                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'pitch')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'solution')}/5</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'model')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'bonus_terms')}/8</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'bonus_auto')}/2</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'drone_demo')}/6</span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-gray-700">{getSectionScore(row, 'overall')}/3</span>
-                              </td>
-                              <td className="px-3 py-3 text-center">
-                                <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded">
-                                  {row.totalScore}
-                                </span>
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <button
-                                    onClick={() => handleEdit(row)}
-                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteConfirm(row)}
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>
