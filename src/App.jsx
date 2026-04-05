@@ -79,27 +79,53 @@ const appId = import.meta.env.VITE_APP_ID || 'innovation-judging';
 const DASHBOARD_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD || 'judge2025';
 
 // --- Constants ---
-const PROPEL_SCHOOLS = [
-  "Frederick Douglass",
-  "Forest Grove",
-  "Guilford",
-  "Leesburg",
-  "Lucketts",
-  "Meadowland",
-  "Potomack",
-  "Rolling Ridge",
-  "Sugarland",
-  "Sully"
-];
+// School data with abbreviations and Innovation Project team names from the master spreadsheet
+const SCHOOL_DATA = {
+  // Propel Schools
+  FDE: { name: "Frederick Douglass", program: "propel", teams: ["Marine Mythics", "Los Pandas", "Chimpanzee Savers", "Black Rhino", "Red Pandas", "The Beary Weary Helpers", "Sunda Tiger Slays", "Red Wolf Saving Group", "Orange Tree Trotters"] },
+  FOR: { name: "Forest Grove", program: "propel", teams: ["The Slimey Goobers", "Barcelona", "The Forest Tigers", "The Rescuers", "The Tough Cookies", "The Sorcerers", "The Animal Heroes", "Big Power"] },
+  GUI: { name: "Guilford", program: "propel", teams: ["Helping Ferrets", "Giant Pandas ASA", "Baboom", "The TDP", "The Drone Feeders", "Busy Beaver Co", "Bamboo Seed Spreader", "Panda Trio", "The Catchers"] },
+  LEE: { name: "Leesburg", program: "propel", teams: ["The Turtle Sisters", "The Animal Rescuers", "Team of Greatness", "Sea Heroes", "Blue Alarm.com", "Eyes in the Sky", "The Savers", "Ferret Finders", "Paw Patrol"] },
+  LUC: { name: "Lucketts", program: "propel", teams: ["The Engineering Whales", "The Space Invaders", "The GEX", "The Runners", "The Shreks"] },
+  MEA: { name: "Meadowland", program: "propel", teams: ["Vaquita", "Amur Leopard", "Arctic Wolf", "Beavers", "Penguin Recyclers", "Hawksbill Helpers", "Maker Macaws", "Amur Armor", "Poacher Bots"] },
+  PMK: { name: "Potomack", program: "propel", teams: ["Swift Panthers", "Three Musketeers", "Super Stars", "The Savers", "Oh Um Giant Pandas", "The Koalas", "Cheetahs", "I don't know, we keep changing it"] },
+  RRD: { name: "Rolling Ridge", program: "propel", teams: ["Lac of Luck", "Team Capybaras", "The Ducksters", "Speedy Sloth", "Los Masters", "The 3 S's", "La Cucaracha", "οι κατσαρίδες (the cockroaches)", "The Eagles", "The Polar Bears"] },
+  SUG: { name: "Sugarland", program: "propel", teams: ["AAMO", "Team Gorillas", "EDA", "The Triple A's", "McChicken Squad", "Animal Savers", "Drone Inventors", "Please Robux"] },
+  SUL: { name: "Sully", program: "propel", teams: ["Smarties", "The Baby Cookie", "Los Six Seven Kids", "The Seal Squad", "Las Bananas", "Thunder Strikers", "Los Kids", "Los Ying and Yang Elephantos"] },
+  // Level Up Schools
+  HPM: { name: "Harper Park", program: "levelup", teams: ["Cosmic Cats", "Team PJO", "The Wild Robots", "The Lil' Baboons", "Worker Drones", "Pekka", "The Super Savers", "Underpaid Workers", "Bamboo Solute", "Lifting Turtles"] },
+  JLS: { name: "Simpson", program: "levelup", teams: ["Try Hard Corporation", "Tigers ROAR", "Icy Spicys Jr", "Dylognevi", "The Three Ferrets", "The Rhinos", "Team 7", "Anti-BrainRot", "The Mechanics from Temu"] },
+  SMM: { name: "Smarts Mill", program: "levelup", teams: [] },
+  SRM: { name: "Seneca Ridge", program: "levelup", teams: ["McLeopard ASMA", "AquaClean Manatees", "Stopping Elephant Poachers", "Super Sunda Inc", "CamoTherm", "Over The Savannah", "Red Panda Express", "The Penguin Savers", "Goldeneye Guardians", "Dolphin Rescue Inc", "Turtle Watch", "Baby Blue Inc", "Left Whale Inc", "Rhinotech Solution", "ANSA", "Medishell Inc", "Fun Ferrets Inc", "Tracked Traces", "Coco Roco Went Loco.co", "Anti-Animal Extinction Inc", "Aquatique Guardians", "The Great Grape Apes Inc", "LEAP", "TurtleTend Inc", "The Polar Express Inc", "Relaxing Rhino Association", "Dolphina", "EPA (Environmental Protection Agency)", "Peanut Oakley Corporation", "Saola Savers - Special Saola Safety Agency (SSSA)", "AquaThermal Corp"] },
+  STM: { name: "Sterling", program: "levelup", teams: ["BRC (Black Rhino Company)", "African Elephant Helpers", "Vaquita Protection Agency", "Almera", "Leaf and Paws", "Panda Express 3000", "AES (African Elephants)", "Environment Savers", "Rhinoemilyn", "Panda Express", "Ferret Savers", "Sun Star Saviors", "Keeper of the Tigers", "Amur Protectors", "Axolotl Saviors", "Orangutan Rescue Inc.", "SAC (Seals are Cute)", "Team Whale", "SJJ Robotics", "Wildlife Warriors", "Urban Drone", "SaveTheRedPandas", "Hungry Hogs", "Golden Drones", "Aquatic Saves", "Save the Pandas"] },
+};
 
-const LEVEL_UP_SCHOOLS = [
-  "Seneca Ridge",
-  "Smarts Mill",
-  "Sterling",
-  "Harper Park",
-  "Simpson",
-  "River Bend"
-];
+// Helper to get school list for a program
+const getSchoolsForProgram = (program) =>
+  Object.entries(SCHOOL_DATA)
+    .filter(([, data]) => data.program === program)
+    .map(([abbr, data]) => ({ abbr, name: data.name }));
+
+const PROPEL_SCHOOLS = getSchoolsForProgram('propel').map(s => s.name);
+const LEVEL_UP_SCHOOLS = getSchoolsForProgram('levelup').map(s => s.name);
+
+// Get teams for a school (by abbreviation or full name)
+const getTeamsForSchool = (schoolKey) => {
+  if (SCHOOL_DATA[schoolKey]) return SCHOOL_DATA[schoolKey].teams;
+  const entry = Object.entries(SCHOOL_DATA).find(([, data]) => data.name === schoolKey);
+  return entry ? entry[1].teams : [];
+};
+
+// Get abbreviation from full school name
+const getSchoolAbbr = (schoolName) => {
+  const entry = Object.entries(SCHOOL_DATA).find(([, data]) => data.name === schoolName);
+  return entry ? entry[0] : schoolName;
+};
+
+// Get full name from abbreviation
+const getSchoolName = (abbr) => {
+  return SCHOOL_DATA[abbr] ? SCHOOL_DATA[abbr].name : abbr;
+};
 
 const PROGRAMS = [
   { id: 'propel', label: 'Propel' },
@@ -239,7 +265,7 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
             <select
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
               value={formData.program}
-              onChange={e => setFormData({...formData, program: e.target.value, schoolSection: ''})}
+              onChange={e => setFormData({...formData, program: e.target.value, schoolSection: '', teamName: ''})}
             >
               <option value="" disabled>Select a program</option>
               {PROGRAMS.map((prog) => (
@@ -259,12 +285,12 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
               <select
                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
                 value={formData.schoolSection}
-                onChange={e => setFormData({...formData, schoolSection: e.target.value})}
+                onChange={e => setFormData({...formData, schoolSection: e.target.value, teamName: ''})}
               >
                 <option value="" disabled>Select a school</option>
-                {(formData.program === 'propel' ? PROPEL_SCHOOLS : LEVEL_UP_SCHOOLS).map((school) => (
-                  <option key={school} value={school}>
-                    {school}
+                {getSchoolsForProgram(formData.program).map(({ abbr, name }) => (
+                  <option key={abbr} value={name}>
+                    {abbr} - {name}
                   </option>
                 ))}
               </select>
@@ -272,19 +298,34 @@ function LandingView({ formData, setFormData, onStartScoring, onViewDashboard })
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
-          <div className="relative">
-            <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Ex: Drone Rescuers"
-              value={formData.teamName}
-              onChange={e => setFormData({...formData, teamName: e.target.value})}
-            />
+        {formData.schoolSection && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
+              {getTeamsForSchool(formData.schoolSection).length > 0 ? (
+                <select
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
+                  value={formData.teamName}
+                  onChange={e => setFormData({...formData, teamName: e.target.value})}
+                >
+                  <option value="" disabled>Select a team</option>
+                  {getTeamsForSchool(formData.schoolSection).map((team) => (
+                    <option key={team} value={team}>{team}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter team name"
+                  value={formData.teamName}
+                  onChange={e => setFormData({...formData, teamName: e.target.value})}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <button
           onClick={onStartScoring}
@@ -526,15 +567,6 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  value={editForm.teamName}
-                  onChange={e => setEditForm({...editForm, teamName: e.target.value})}
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Judge Name</label>
                 <input
                   type="text"
@@ -548,7 +580,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                 <select
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   value={editForm.program}
-                  onChange={e => setEditForm({...editForm, program: e.target.value, schoolSection: ''})}
+                  onChange={e => setEditForm({...editForm, program: e.target.value, schoolSection: '', teamName: ''})}
                 >
                   {PROGRAMS.map(prog => (
                     <option key={prog.id} value={prog.id}>{prog.label}</option>
@@ -560,13 +592,35 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                 <select
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   value={editForm.schoolSection}
-                  onChange={e => setEditForm({...editForm, schoolSection: e.target.value})}
+                  onChange={e => setEditForm({...editForm, schoolSection: e.target.value, teamName: ''})}
                 >
                   <option value="">Select a school</option>
-                  {(editForm.program === 'levelup' ? LEVEL_UP_SCHOOLS : PROPEL_SCHOOLS).map(school => (
-                    <option key={school} value={school}>{school}</option>
+                  {getSchoolsForProgram(editForm.program).map(({ abbr, name }) => (
+                    <option key={abbr} value={name}>{abbr} - {name}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                {editForm.schoolSection && getTeamsForSchool(editForm.schoolSection).length > 0 ? (
+                  <select
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={editForm.teamName}
+                    onChange={e => setEditForm({...editForm, teamName: e.target.value})}
+                  >
+                    <option value="">Select a team</option>
+                    {getTeamsForSchool(editForm.schoolSection).map(team => (
+                      <option key={team} value={team}>{team}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={editForm.teamName}
+                    onChange={e => setEditForm({...editForm, teamName: e.target.value})}
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Total Score</label>
