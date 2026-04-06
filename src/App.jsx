@@ -764,6 +764,9 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                   const schoolKey = `${label}-${school}`;
                   const isSchoolOpen = expandedSchools[schoolKey] !== false; // default open
                   const totalSubmissions = teams.reduce((s, t) => s + t.count, 0);
+                  const schoolAvgTotal = teams.length > 0
+                    ? Math.round((teams.reduce((s, t) => s + t.avgTotal, 0) / teams.length) * 10) / 10
+                    : 0;
                   return (
                     <div key={school} className="bg-white rounded-xl shadow-sm border overflow-hidden">
                       <button
@@ -774,9 +777,12 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                           <School className="w-4 h-4" />
                           {getSchoolAbbr(school)} - {school}
                         </h3>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <span className={`text-xs ${styles.badge} px-2 py-1 rounded-full`}>
                             {teams.length} teams &middot; {totalSubmissions} scores
+                          </span>
+                          <span className={`text-sm font-bold ${styles.totalBadge} px-2 py-1 rounded`}>
+                            School Avg: {schoolAvgTotal}/36
                           </span>
                           {isSchoolOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                         </div>
@@ -798,6 +804,9 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                                 <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Drone Flight Demo">Drone</th>
                                 <th className="px-2 py-3 font-medium text-center whitespace-nowrap" title="Presentation Skills">Pres</th>
                                 <th className="px-3 py-3 font-medium text-center whitespace-nowrap">Total</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap bg-yellow-50 border-l" title="Best STEM Model Award">STEM</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap bg-yellow-50" title="Best Presentation Award">Pres Award</th>
+                                <th className="px-2 py-3 font-medium text-center whitespace-nowrap bg-yellow-50 border-r" title="Best Drone Solution Award">Drone Award</th>
                                 <th className="px-2 py-3 font-medium text-center whitespace-nowrap">Actions</th>
                               </tr>
                             </thead>
@@ -833,6 +842,15 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                                           {team.avgTotal}
                                         </span>
                                       </td>
+                                      <td className="px-2 py-3 text-center bg-yellow-50/50 border-l">
+                                        <span className="font-semibold text-yellow-700">{team.avgModel}/6</span>
+                                      </td>
+                                      <td className="px-2 py-3 text-center bg-yellow-50/50">
+                                        <span className="font-semibold text-yellow-700">{team.avgPres}/3</span>
+                                      </td>
+                                      <td className="px-2 py-3 text-center bg-yellow-50/50 border-r">
+                                        <span className="font-semibold text-yellow-700">{team.avgDrone}/6</span>
+                                      </td>
                                       <td className="px-2 py-3 text-center"></td>
                                     </tr>
 
@@ -852,6 +870,9 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                                         <td className="px-3 py-2 text-center">
                                           <span className="text-gray-600 font-medium">{row.totalScore}</span>
                                         </td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-l text-gray-500">{getSectionScore(row, 'model')}/6</td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 text-gray-500">{getSectionScore(row, 'overall')}/3</td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-r text-gray-500">{getSectionScore(row, 'drone_demo')}/6</td>
                                         <td className="px-2 py-2 text-center">
                                           <div className="flex items-center justify-center gap-1">
                                             <button
