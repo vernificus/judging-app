@@ -146,11 +146,11 @@ const RUBRIC_SECTIONS = [
     description: 'Endangered Animal Pitch - Knowledge & Understanding',
     items: [
       { id: 'pitch_intro', label: 'Shark Tank Pitch Intro', type: 'scale', max: 5,
-        hint: 'Company name, name fits solution, specified investment amount',
-        levels: ['No appropriate intro', 'Needed prompting', 'One of three pieces', 'Two of three pieces', 'All three intro pieces'] },
+        criteria: ['Company name introduced', 'Company name makes sense with solution', 'Specified investment amount'],
+        levels: ['No appropriate intro', 'Needed prompting to explain', 'Included 1 of 3 criteria', 'Included 2 of 3 criteria', 'Included all 3 criteria'] },
       { id: 'pitch_background', label: 'Background Information', type: 'scale', max: 5,
-        hint: 'Why chosen, what makes endangered, why Sharks should care',
-        levels: ['Struggled to explain', 'Needed prompting', 'One of three elements', 'Two of three elements', 'All three elements'] },
+        criteria: ['Explained why they chose this animal', 'Explained what is making the animal endangered', 'Explained why Sharks should care about saving it'],
+        levels: ['Struggled to explain', 'Needed prompting to explain', 'Covered 1 of 3 criteria', 'Covered 2 of 3 criteria', 'Covered all 3 criteria'] },
     ]
   },
   {
@@ -159,8 +159,8 @@ const RUBRIC_SECTIONS = [
     description: 'How does the drone solution help save the animal?',
     items: [
       { id: 'sol_drone', label: 'Drone Solution', type: 'scale', max: 5,
-        hint: 'How drone flies mission, modifications, mission success, visual of parts, investment use',
-        levels: ['1 element, no detail', '2 of 5 elements', '3 of 5 elements', '4 of 5 elements', 'All 5 elements'] },
+        criteria: ['How drone will fly its mission', 'Additions/changes made to drone', 'How drone mission is successful', 'Visual representation of drone and parts', 'How Shark\'s investment will be used'],
+        levels: ['Mentioned 1 element, no detail', 'Addressed 2 of 5 criteria', 'Addressed 3 of 5 criteria', 'Addressed 4 of 5 criteria', 'Addressed all 5 criteria'] },
     ]
   },
   {
@@ -169,11 +169,11 @@ const RUBRIC_SECTIONS = [
     description: 'Habitat/Ecosystem STEM Model',
     items: [
       { id: 'model_animal', label: 'Endangered Animal', type: 'scale', max: 5,
-        hint: 'Animal obvious, two versions: large Strawbees + small for model',
-        levels: ['No focus, one version only', 'Hard to identify, one version', 'Needs some explanation, two versions', 'Obvious but may be hidden, two versions', 'Obvious & prominent, two versions'] },
+        criteria: ['Animal is obvious and easy to identify', 'Large Strawbees version present (no larger than 2ft x 2ft)', 'Smaller version fitting into STEM model present'],
+        levels: ['No focused animal, only one version', 'Hard to identify, only one version', 'Needs some explanation, two versions present', 'Obvious but may be hidden, two versions present', 'Obvious & prominently displayed, two versions present'] },
       { id: 'model_habitat', label: 'Habitat/Ecosystem', type: 'scale', max: 5,
-        hint: 'Food, shelter, water, food chain, other organisms, correct ecosystem, fits on tray',
-        levels: ['Incomplete, not fitting on tray', '4-5 of 7 elements', '6 of 7 elements', 'All 7, mostly fits on tray', 'All 7 clearly, fits neatly on tray'] },
+        criteria: ['Food sources for animal', 'Shelter', 'Water source', 'Food chain / food web', 'Other living organisms', 'All components belong in correct ecosystem', 'All components fit neatly on display tray'],
+        levels: ['Incomplete, many components not fitting on tray', '4-5 of 7 criteria present', '6 of 7 criteria present', 'All 7 present, mostly fits on tray', 'All 7 clearly present, fits neatly on tray'] },
     ]
   },
   {
@@ -197,9 +197,9 @@ const RUBRIC_SECTIONS = [
     description: 'Can students animate their animal using Micro:bit?',
     items: [
       { id: 'auto_animation', label: 'Animal Animation', type: 'scale', max: 5,
-        hint: 'Animal moves using Micro:bit and motors, code shown',
+        criteria: ['Animal moves using Micro:bit and motors', 'Students showed off their code'],
         customScores: [0, 3, 5],
-        levels: ['Not present (0 pts)', 'Animation works, no code shown (3 pts)', 'Animation works + code shown (5 pts)'] },
+        levels: ['Not present', 'Animation works, no code shown', 'Animation works + code shown'] },
     ]
   },
   {
@@ -208,12 +208,12 @@ const RUBRIC_SECTIONS = [
     description: 'Drone flight demonstration and STEM additions',
     items: [
       { id: 'drone_flight', label: 'Drone Flight', type: 'scale', max: 5,
-        hint: 'Autonomous flight, interaction with model, video evidence',
-        levels: ['Not completing mission', 'Attempting but not successful', 'Autonomous + interacting, basic evidence', 'Autonomous + interacting, adequate evidence', 'Autonomous + interacting, clear evidence'] },
+        criteria: ['Drone autonomously flying (no keyboard)', 'Drone interacting with STEM model', 'Video provides clear evidence of success'],
+        levels: ['Not completing mission, keyboard controlled', 'Attempting but not successfully completed', 'Autonomous + interacting, basic video evidence', 'Autonomous + interacting, adequate video evidence', 'Autonomous + interacting, clear/reliable video evidence'] },
       { id: 'drone_stem', label: 'Drone STEM Additions', type: 'scale', max: 2,
-        hint: 'STEM modifications present and functional on the drone',
+        criteria: ['STEM additions clearly present', 'Additions don\'t impede flight', 'No adjustment needed before each flight'],
         customScores: [0, 1, 2],
-        levels: ['No additions (0 pts)', 'Present but may impede flight (1 pt)', 'Present, functional, don\'t impede flight (2 pts)'] },
+        levels: ['No additions present', 'Present but may impede flight or need adjustment', 'Present, functional, don\'t impede flight'] },
     ]
   },
   {
@@ -222,14 +222,14 @@ const RUBRIC_SECTIONS = [
     description: 'Presentation delivery and teamwork',
     items: [
       { id: 'overall_speaking', label: 'Speaking', type: 'scale', max: 5,
-        hint: 'Confidence, expanding on slides vs reading',
-        levels: ['Only read slides', 'Struggled without reading', 'Relied on slides, sometimes read', 'Used slides for prompting, didn\'t read', 'Spoke confidently, expanded beyond slides'] },
+        criteria: ['Students speak confidently', 'Students expand on slide information', 'Students do not just read from slides'],
+        levels: ['Only read slides, even if incomplete', 'Struggled without reading slides', 'Relied on slides, sometimes read them', 'Used slides for prompting, didn\'t read completely', 'Spoke confidently, expanded beyond slides'] },
       { id: 'overall_knowledge', label: 'Prior Knowledge', type: 'scale', max: 5,
-        hint: 'Presenting from knowledge vs dependence on slides',
-        levels: ['Only read slides', 'Struggled without reading', 'Relied on slides, sometimes read', 'Used slides for prompting only', 'Presented from knowledge, expanded'] },
+        criteria: ['Presented from prior knowledge', 'Did not read slides', 'Expanded on information beyond slides'],
+        levels: ['Only read slides, even if incomplete', 'Struggled without reading slides', 'Relied on slides, sometimes read them', 'Used slides for prompting only', 'Presented from knowledge, expanded on information'] },
       { id: 'overall_teamwork', label: 'Teamwork', type: 'scale', max: 5,
-        hint: 'Was teamwork evident throughout presentation and work?',
-        levels: ['No roles, struggled through', 'Unorganized, prompted each other', 'One student clearly the lead', 'Mostly teamwork, 1-2 leads', 'Clear teamwork throughout'] },
+        criteria: ['Teamwork clear throughout presentation', 'Teamwork clear throughout work/model', 'All members had roles and contributed'],
+        levels: ['No roles, struggled through presentation', 'Unorganized, prompted each other', 'Teamwork used but one student clearly the lead', 'Mostly teamwork, 1-2 students the lead', 'Clear teamwork throughout presentation and work'] },
     ]
   },
 ];
@@ -469,34 +469,48 @@ function ScoringView({
                           {currentVal !== undefined ? currentVal : '—'}/{item.max}
                         </div>
                       </div>
-                      {item.hint && (
-                        <p className="text-xs text-gray-400 mb-2">{item.hint}</p>
+
+                      {/* Criteria guide */}
+                      {item.criteria && (
+                        <div className="mb-3 pl-1">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Look for:</p>
+                          <ul className="space-y-0.5">
+                            {item.criteria.map((c, i) => (
+                              <li key={i} className="text-xs text-gray-500 flex items-start gap-1.5">
+                                <span className="text-gray-300 mt-px">&#9702;</span>
+                                {c}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                      <div className="flex gap-1.5 flex-wrap">
+
+                      {/* Score options with inline descriptions */}
+                      <div className="space-y-1.5">
                         {scores.map((score, idx) => (
                           <button
                             key={score}
                             type="button"
                             onClick={() => onScoreChange(item.id, currentVal === score ? undefined : score)}
-                            className={`relative group flex-1 min-w-[3rem] py-2.5 rounded-lg text-sm font-bold transition-all border-2 ${
+                            className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left transition-all border-2 ${
                               currentVal === score
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                             }`}
                           >
-                            {score}
-                            <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs rounded bg-gray-800 text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 max-w-[200px] text-center`}>
+                            <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
+                              currentVal === score
+                                ? 'bg-white/20 text-white'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {score}
+                            </span>
+                            <span className={`text-sm pt-0.5 ${currentVal === score ? 'text-white' : 'text-gray-600'}`}>
                               {item.levels[idx]}
                             </span>
                           </button>
                         ))}
                       </div>
-                      {/* Show selected level description */}
-                      {currentVal !== undefined && (
-                        <p className="text-xs text-blue-600 mt-1.5 font-medium">
-                          {item.levels[scores.indexOf(currentVal)]}
-                        </p>
-                      )}
                     </div>
                   );
                 })}
