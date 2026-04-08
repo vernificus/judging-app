@@ -591,7 +591,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6">
       {/* Edit Modal */}
       {editingEntry && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1014,10 +1014,10 @@ export default function RubricApp() {
 
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'scores'), payload);
 
-      // Reset for next team
+      // Reset for next team - keep judge name, program, and school pre-filled
       setFormData(prev => ({ ...prev, teamName: '' }));
       setChecklist({});
-      setView('dashboard');
+      setView('landing');
     } catch (error) {
       console.error("Error submitting:", error);
       alert("Error saving score. Please try again.");
