@@ -136,102 +136,128 @@ const PROGRAMS = [
   { id: 'levelup', label: 'Level Up' }
 ];
 
-// --- Simplified Rubric Data Structure (Checklist Only) ---
+// --- Rubric Data Structure ---
+// Aligned with the official Innovation Day 2025-2026 rubric and presentation flow.
+// Order matches the student presentation template: Pitch → Solution → STEM Model → Bonus → Automation → Drone Demo → Overall
 const RUBRIC_SECTIONS = [
   {
     id: 'pitch',
     title: 'The Pitch (Shark Tank)',
-    description: 'Did the team hook you?',
+    description: 'Endangered Animal Pitch - Knowledge & Understanding',
     items: [
-      { id: 'pitch_name', label: 'They told us their Company Name.' },
-      { id: 'pitch_match', label: 'The Company Name fits their idea.' },
-      { id: 'pitch_ask', label: 'They asked for a specific investment (money).' },
-      { id: 'pitch_why_animal', label: 'They explained why they picked this animal.' },
-      { id: 'pitch_danger', label: 'They explained why the animal is endangered.' },
-      { id: 'pitch_care', label: 'They explained why we should care about saving it.' }
+      { id: 'pitch_intro', label: 'Shark Tank Pitch Intro', type: 'scale', max: 5,
+        hint: 'Company name, name fits solution, specified investment amount',
+        levels: ['No appropriate intro', 'Needed prompting', 'One of three pieces', 'Two of three pieces', 'All three intro pieces'] },
+      { id: 'pitch_background', label: 'Background Information', type: 'scale', max: 5,
+        hint: 'Why chosen, what makes endangered, why Sharks should care',
+        levels: ['Struggled to explain', 'Needed prompting', 'One of three elements', 'Two of three elements', 'All three elements'] },
     ]
   },
   {
     id: 'solution',
-    title: 'The Solution',
-    description: 'How does the drone help?',
+    title: 'Solution Explanation',
+    description: 'How does the drone solution help save the animal?',
     items: [
-      { id: 'sol_mission', label: 'They explained how the drone flies the mission.' },
-      { id: 'sol_changes', label: 'They explained what they changed on the drone.' },
-      { id: 'sol_save', label: 'They explained how the mission saves the animal.' },
-      { id: 'sol_parts', label: 'They showed a picture or model of the drone parts.' },
-      { id: 'sol_money', label: 'They explained how they will use the investment money.' }
+      { id: 'sol_drone', label: 'Drone Solution', type: 'scale', max: 5,
+        hint: 'How drone flies mission, modifications, mission success, visual of parts, investment use',
+        levels: ['1 element, no detail', '2 of 5 elements', '3 of 5 elements', '4 of 5 elements', 'All 5 elements'] },
     ]
   },
   {
     id: 'model',
-    title: 'The Habitat Model',
-    description: 'Looking at the tray and animal',
+    title: 'STEM Model',
+    description: 'Habitat/Ecosystem STEM Model',
     items: [
-      { id: 'model_visual', label: 'The animal is easy to find and identify.' },
-      { id: 'model_versions', label: 'There are 2 animals: One Big (Strawbees) & One Small.' },
-      { id: 'model_food', label: 'The habitat has Food.' },
-      { id: 'model_water', label: 'The habitat has Water.' },
-      { id: 'model_shelter', label: 'The habitat has Shelter.' },
-      { id: 'model_fit', label: 'Everything fits neatly on the tray (nothing hanging off).' }
+      { id: 'model_animal', label: 'Endangered Animal', type: 'scale', max: 5,
+        hint: 'Animal obvious, two versions: large Strawbees + small for model',
+        levels: ['No focus, one version only', 'Hard to identify, one version', 'Needs some explanation, two versions', 'Obvious but may be hidden, two versions', 'Obvious & prominent, two versions'] },
+      { id: 'model_habitat', label: 'Habitat/Ecosystem', type: 'scale', max: 5,
+        hint: 'Food, shelter, water, food chain, other organisms, correct ecosystem, fits on tray',
+        levels: ['Incomplete, not fitting on tray', '4-5 of 7 elements', '6 of 7 elements', 'All 7, mostly fits on tray', 'All 7 clearly, fits neatly on tray'] },
     ]
   },
   {
     id: 'bonus_terms',
-    title: 'Bonus: Science Words',
-    description: 'Did they use these words correctly?',
+    title: 'Ecosystem Bonus',
+    description: '1 point per term correctly included (up to 8)',
     items: [
-      { id: 'term_biotic', label: 'Abiotic / Biotic' },
-      { id: 'term_renewable', label: 'Renewable / Non-renewable' },
-      { id: 'term_predator', label: 'Predators and Prey' },
-      { id: 'term_producer', label: 'Producer, Consumer, Decomposer' },
-      { id: 'term_energy', label: 'Energy Transfer' },
-      { id: 'term_adapt', label: 'Adaptations (Body or Behavior)' },
-      { id: 'term_human', label: 'Human Impact' },
-      { id: 'term_symb', label: 'Symbiotic Relationships' }
+      { id: 'term_biotic', label: 'Abiotic / Biotic', type: 'check' },
+      { id: 'term_renewable', label: 'Renewable vs. Nonrenewable resources', type: 'check' },
+      { id: 'term_predator', label: 'Predators and Prey', type: 'check' },
+      { id: 'term_producer', label: 'Producer, Consumer, Decomposer', type: 'check' },
+      { id: 'term_energy', label: 'How energy is transferred', type: 'check' },
+      { id: 'term_adapt', label: 'Adaptations (structural or behavioral)', type: 'check' },
+      { id: 'term_human', label: 'Highlighting human impact', type: 'check' },
+      { id: 'term_symb', label: 'Symbiotic relationships', type: 'check' },
     ]
   },
   {
     id: 'bonus_auto',
-    title: 'Bonus: Automation',
-    description: 'Does the animal move?',
+    title: 'Automation Bonus',
+    description: 'Can students animate their animal using Micro:bit?',
     items: [
-      { id: 'auto_move', label: 'The animal moves using the Micro:bit.' },
-      { id: 'auto_code', label: 'They showed the code for the movement.' }
+      { id: 'auto_animation', label: 'Animal Animation', type: 'scale', max: 5,
+        hint: 'Animal moves using Micro:bit and motors, code shown',
+        customScores: [0, 3, 5],
+        levels: ['Not present (0 pts)', 'Animation works, no code shown (3 pts)', 'Animation works + code shown (5 pts)'] },
     ]
   },
   {
     id: 'drone_demo',
-    title: 'Drone Flight Demo',
-    description: 'Watch the video or live flight',
+    title: 'Drone Demo & Coding',
+    description: 'Drone flight demonstration and STEM additions',
     items: [
-      { id: 'drone_code', label: 'We can see the code on the screen.' },
-      { id: 'drone_auto', label: 'The drone flies by itself (Autonomous).' },
-      { id: 'drone_interact', label: 'The drone interacts with the model.' },
-      { id: 'drone_success', label: 'The drone successfully finished the mission.' },
-      { id: 'drone_additions', label: 'The drone has STEM additions attached to it.' },
-      { id: 'drone_steady', label: 'The additions stayed on and didn\'t block the flight.' }
+      { id: 'drone_flight', label: 'Drone Flight', type: 'scale', max: 5,
+        hint: 'Autonomous flight, interaction with model, video evidence',
+        levels: ['Not completing mission', 'Attempting but not successful', 'Autonomous + interacting, basic evidence', 'Autonomous + interacting, adequate evidence', 'Autonomous + interacting, clear evidence'] },
+      { id: 'drone_stem', label: 'Drone STEM Additions', type: 'scale', max: 2,
+        hint: 'STEM modifications present and functional on the drone',
+        customScores: [0, 1, 2],
+        levels: ['No additions (0 pts)', 'Present but may impede flight (1 pt)', 'Present, functional, don\'t impede flight (2 pts)'] },
     ]
   },
   {
     id: 'overall',
-    title: 'Presentation Skills',
-    description: 'How did they do?',
+    title: 'Overall Experience',
+    description: 'Presentation delivery and teamwork',
     items: [
-      { id: 'pres_speak', label: 'They spoke loudly and clearly.' },
-      { id: 'pres_knowledge', label: 'They used their own words (didn\'t just read slides).' },
-      { id: 'pres_team', label: 'Everyone on the team helped present.' }
+      { id: 'overall_speaking', label: 'Speaking', type: 'scale', max: 5,
+        hint: 'Confidence, expanding on slides vs reading',
+        levels: ['Only read slides', 'Struggled without reading', 'Relied on slides, sometimes read', 'Used slides for prompting, didn\'t read', 'Spoke confidently, expanded beyond slides'] },
+      { id: 'overall_knowledge', label: 'Prior Knowledge', type: 'scale', max: 5,
+        hint: 'Presenting from knowledge vs dependence on slides',
+        levels: ['Only read slides', 'Struggled without reading', 'Relied on slides, sometimes read', 'Used slides for prompting only', 'Presented from knowledge, expanded'] },
+      { id: 'overall_teamwork', label: 'Teamwork', type: 'scale', max: 5,
+        hint: 'Was teamwork evident throughout presentation and work?',
+        levels: ['No roles, struggled through', 'Unorganized, prompted each other', 'One student clearly the lead', 'Mostly teamwork, 1-2 leads', 'Clear teamwork throughout'] },
     ]
-  }
+  },
 ];
 
 // --- Helper Functions ---
+// Total max points across all sections
+const TOTAL_MAX_POINTS = RUBRIC_SECTIONS.reduce((total, section) =>
+  total + section.items.reduce((s, item) => s + (item.max || 1), 0), 0);
+
+// Get the max possible score for a section
+const getSectionMax = (sectionId) => {
+  const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
+  if (!section) return 0;
+  return section.items.reduce((sum, item) => sum + (item.max || 1), 0);
+};
+
 // Get the score for a specific section from a submission's checklist
+// Handles both old format (boolean checkboxes) and new format (numeric scales)
 const getSectionScore = (submission, sectionId) => {
   const section = RUBRIC_SECTIONS.find(s => s.id === sectionId);
   if (!section || !submission.checklist) return 0;
   return section.items.reduce((sum, item) => {
-    return sum + (submission.checklist[item.id] ? 1 : 0);
+    const val = submission.checklist[item.id];
+    if (val === undefined || val === null) return sum;
+    // Numeric value (new scale format)
+    if (typeof val === 'number') return sum + val;
+    // Boolean value (old checklist format or new check items)
+    return sum + (val ? 1 : 0);
   }, 0);
 };
 
@@ -356,6 +382,7 @@ function ScoringView({
   formData,
   checklist,
   onChecklistToggle,
+  onScoreChange,
   onSubmit,
   onCancel,
   loading,
@@ -389,38 +416,90 @@ function ScoringView({
         {RUBRIC_SECTIONS.map((section) => (
           <div key={section.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div className="bg-blue-50 p-4 border-b">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <ListTodo className="w-5 h-5 text-blue-600" />
-                {section.title}
-              </h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <ListTodo className="w-5 h-5 text-blue-600" />
+                  {section.title}
+                </h3>
+                <span className="text-sm font-semibold text-blue-600">
+                  {getSectionScore({ checklist }, section.id)}/{getSectionMax(section.id)}
+                </span>
+              </div>
               <p className="text-sm text-gray-600 mt-1">{section.description}</p>
             </div>
 
             <div className="p-2 sm:p-4">
-              <div className="grid grid-cols-1 gap-2">
-                {section.items.map(item => (
-                  <label
-                    key={item.id}
-                    className={`
-                      flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all select-none
-                      ${checklist[item.id]
-                        ? 'bg-green-50 border-green-300 shadow-sm'
-                        : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-300'}
-                    `}
-                  >
-                    <div className="pt-0.5">
-                      <input
-                        type="checkbox"
-                        className="w-6 h-6 text-green-600 rounded focus:ring-green-500 cursor-pointer"
-                        checked={!!checklist[item.id]}
-                        onChange={() => onChecklistToggle(item.id)}
-                      />
+              <div className="grid grid-cols-1 gap-3">
+                {section.items.map(item => {
+                  if (item.type === 'check') {
+                    // Checkbox item (bonus terms)
+                    return (
+                      <label
+                        key={item.id}
+                        className={`
+                          flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all select-none
+                          ${checklist[item.id]
+                            ? 'bg-green-50 border-green-300 shadow-sm'
+                            : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-300'}
+                        `}
+                      >
+                        <div className="pt-0.5">
+                          <input
+                            type="checkbox"
+                            className="w-6 h-6 text-green-600 rounded focus:ring-green-500 cursor-pointer"
+                            checked={!!checklist[item.id]}
+                            onChange={() => onChecklistToggle(item.id)}
+                          />
+                        </div>
+                        <span className={`text-base ${checklist[item.id] ? 'text-green-900 font-medium' : 'text-gray-700'}`}>
+                          {item.label}
+                        </span>
+                      </label>
+                    );
+                  }
+
+                  // Scale item (1-5 or custom scores)
+                  const scores = item.customScores || Array.from({ length: item.max }, (_, i) => i + 1);
+                  const currentVal = checklist[item.id];
+                  return (
+                    <div key={item.id} className="p-3 rounded-lg border border-gray-100">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="font-medium text-gray-800">{item.label}</div>
+                        <div className="text-sm font-semibold text-blue-600 whitespace-nowrap ml-2">
+                          {currentVal !== undefined ? currentVal : '—'}/{item.max}
+                        </div>
+                      </div>
+                      {item.hint && (
+                        <p className="text-xs text-gray-400 mb-2">{item.hint}</p>
+                      )}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {scores.map((score, idx) => (
+                          <button
+                            key={score}
+                            type="button"
+                            onClick={() => onScoreChange(item.id, currentVal === score ? undefined : score)}
+                            className={`relative group flex-1 min-w-[3rem] py-2.5 rounded-lg text-sm font-bold transition-all border-2 ${
+                              currentVal === score
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                            }`}
+                          >
+                            {score}
+                            <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs rounded bg-gray-800 text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 max-w-[200px] text-center`}>
+                              {item.levels[idx]}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      {/* Show selected level description */}
+                      {currentVal !== undefined && (
+                        <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                          {item.levels[scores.indexOf(currentVal)]}
+                        </p>
+                      )}
                     </div>
-                    <span className={`text-base ${checklist[item.id] ? 'text-green-900 font-medium' : 'text-gray-700'}`}>
-                      {item.label}
-                    </span>
-                  </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -431,7 +510,7 @@ function ScoringView({
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg flex items-center justify-between max-w-2xl mx-auto z-20">
         <div className="text-sm">
           <span className="text-gray-500">Total Score:</span>
-          <div className="font-bold text-2xl text-gray-800">{currentTotal}</div>
+          <div className="font-bold text-2xl text-gray-800">{currentTotal} <span className="text-sm text-gray-400 font-normal">/ {maxPoints}</span></div>
         </div>
         <button
           onClick={onSubmit}
@@ -817,7 +896,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                           {data.schoolRankings[0] ? `${getSchoolAbbr(data.schoolRankings[0].school)} - ${data.schoolRankings[0].school}` : '—'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Avg: {data.schoolRankings[0]?.avgTotal || 0}/36 across {data.schoolRankings[0]?.teamCount || 0} teams
+                          Avg: {data.schoolRankings[0]?.avgTotal || 0}/{TOTAL_MAX_POINTS} across {data.schoolRankings[0]?.teamCount || 0} teams
                         </div>
                       </div>
                     </div>
@@ -826,9 +905,9 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                   {/* Award Categories */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { title: 'Best STEM Model', key: 'model', teams: data.model, max: 6 },
-                      { title: 'Best Presentation', key: 'pres', teams: data.pres, max: 3 },
-                      { title: 'Best Drone Solution', key: 'drone', teams: data.drone, max: 6 }
+                      { title: 'Best STEM Model', key: 'model', teams: data.model, max: getSectionMax('model') },
+                      { title: 'Best Presentation', key: 'pres', teams: data.pres, max: getSectionMax('overall') },
+                      { title: 'Best Drone Solution', key: 'drone', teams: data.drone, max: getSectionMax('drone_demo') }
                     ].map(({ title, key, teams, max }) => (
                       <div key={key} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <h4 className="font-semibold text-yellow-800 mb-3 flex items-center gap-1">
@@ -900,7 +979,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                             {teams.length} teams &middot; {totalSubmissions} scores
                           </span>
                           <span className={`text-sm font-bold ${styles.totalBadge} px-2 py-1 rounded`}>
-                            School Avg: {schoolAvgTotal}/36
+                            School Avg: {schoolAvgTotal}/{TOTAL_MAX_POINTS}
                           </span>
                           {isSchoolOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                         </div>
@@ -948,26 +1027,26 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                                       <td className="px-4 py-3 text-gray-400 whitespace-nowrap italic">
                                         avg of {team.count} {team.count === 1 ? 'judge' : 'judges'}
                                       </td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPitch}/6</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgSolution}/5</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgModel}/6</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgScience}/8</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgAuto}/2</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgDrone}/6</td>
-                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPres}/3</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPitch}/{getSectionMax('pitch')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgSolution}/{getSectionMax('solution')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgModel}/{getSectionMax('model')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgScience}/{getSectionMax('bonus_terms')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgAuto}/{getSectionMax('bonus_auto')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgDrone}/{getSectionMax('drone_demo')}</td>
+                                      <td className="px-2 py-3 text-center font-semibold text-gray-700">{team.avgPres}/{getSectionMax('overall')}</td>
                                       <td className="px-3 py-3 text-center">
                                         <span className={`${styles.totalBadge} font-bold px-2 py-1 rounded`}>
                                           {team.avgTotal}
                                         </span>
                                       </td>
                                       <td className="px-2 py-3 text-center bg-yellow-50/50 border-l">
-                                        <span className="font-semibold text-yellow-700">{team.avgModel}/6</span>
+                                        <span className="font-semibold text-yellow-700">{team.avgModel}/{getSectionMax('model')}</span>
                                       </td>
                                       <td className="px-2 py-3 text-center bg-yellow-50/50">
-                                        <span className="font-semibold text-yellow-700">{team.avgPres}/3</span>
+                                        <span className="font-semibold text-yellow-700">{team.avgPres}/{getSectionMax('overall')}</span>
                                       </td>
                                       <td className="px-2 py-3 text-center bg-yellow-50/50 border-r">
-                                        <span className="font-semibold text-yellow-700">{team.avgDrone}/6</span>
+                                        <span className="font-semibold text-yellow-700">{team.avgDrone}/{getSectionMax('drone_demo')}</span>
                                       </td>
                                       <td className="px-2 py-3 text-center"></td>
                                     </tr>
@@ -978,19 +1057,19 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
                                         <td className="px-4 py-2"></td>
                                         <td className="px-4 py-2 text-gray-500 text-xs whitespace-nowrap pl-8">{row.teamName}</td>
                                         <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{row.judgeName}</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'pitch')}/6</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'solution')}/5</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'model')}/6</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_terms')}/8</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_auto')}/2</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'drone_demo')}/6</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'overall')}/3</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'pitch')}/{getSectionMax('pitch')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'solution')}/{getSectionMax('solution')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'model')}/{getSectionMax('model')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_terms')}/{getSectionMax('bonus_terms')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'bonus_auto')}/{getSectionMax('bonus_auto')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'drone_demo')}/{getSectionMax('drone_demo')}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{getSectionScore(row, 'overall')}/{getSectionMax('overall')}</td>
                                         <td className="px-3 py-2 text-center">
                                           <span className="text-gray-600 font-medium">{row.totalScore}</span>
                                         </td>
-                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-l text-gray-500">{getSectionScore(row, 'model')}/6</td>
-                                        <td className="px-2 py-2 text-center bg-yellow-50/30 text-gray-500">{getSectionScore(row, 'overall')}/3</td>
-                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-r text-gray-500">{getSectionScore(row, 'drone_demo')}/6</td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-l text-gray-500">{getSectionScore(row, 'model')}/{getSectionMax('model')}</td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 text-gray-500">{getSectionScore(row, 'overall')}/{getSectionMax('overall')}</td>
+                                        <td className="px-2 py-2 text-center bg-yellow-50/30 border-r text-gray-500">{getSectionScore(row, 'drone_demo')}/{getSectionMax('drone_demo')}</td>
                                         <td className="px-2 py-2 text-center">
                                           <div className="flex items-center justify-center gap-1">
                                             <button
@@ -1101,15 +1180,28 @@ export default function RubricApp() {
     }));
   };
 
+  const handleScoreChange = (itemId, value) => {
+    setChecklist(prev => {
+      const next = { ...prev };
+      if (value === undefined) {
+        delete next[itemId];
+      } else {
+        next[itemId] = value;
+      }
+      return next;
+    });
+  };
+
   const calculateTotal = () => {
-    // Count how many true values exist in the checklist object
-    return Object.values(checklist).filter(val => val === true).length;
+    return Object.values(checklist).reduce((sum, val) => {
+      if (typeof val === 'number') return sum + val;
+      return sum + (val ? 1 : 0);
+    }, 0);
   };
 
   const getMaxPoints = () => {
-    let total = 0;
-    RUBRIC_SECTIONS.forEach(section => total += section.items.length);
-    return total;
+    return RUBRIC_SECTIONS.reduce((total, section) =>
+      total + section.items.reduce((s, item) => s + (item.max || 1), 0), 0);
   };
 
   const handleSubmit = async () => {
@@ -1172,7 +1264,7 @@ export default function RubricApp() {
       ...submittedData.map(row => {
         const date = row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleString() : '';
         const program = row.program === 'levelup' ? 'Level Up' : 'Propel';
-        return `"${program}","${row.schoolSection}","${row.teamName}","${row.judgeName}",${getSectionScore(row, 'pitch')},${getSectionScore(row, 'solution')},${getSectionScore(row, 'model')},${getSectionScore(row, 'bonus_terms')},${getSectionScore(row, 'bonus_auto')},${getSectionScore(row, 'drone_demo')},${getSectionScore(row, 'overall')},${row.totalScore},${row.maxPossible || getMaxPoints()},"${date}"`;
+        return `"${program}","${row.schoolSection}","${row.teamName}","${row.judgeName}",${getSectionScore(row, 'pitch')},${getSectionScore(row, 'solution')},${getSectionScore(row, 'model')},${getSectionScore(row, 'bonus_terms')},${getSectionScore(row, 'bonus_auto')},${getSectionScore(row, 'drone_demo')},${getSectionScore(row, 'overall')},${row.totalScore},${row.maxPossible || TOTAL_MAX_POINTS},"${date}"`;
       })
     ].join('\n');
 
@@ -1221,6 +1313,7 @@ export default function RubricApp() {
           formData={formData}
           checklist={checklist}
           onChecklistToggle={handleChecklistToggle}
+          onScoreChange={handleScoreChange}
           onSubmit={handleSubmit}
           onCancel={() => setView('landing')}
           loading={loading}
