@@ -33,6 +33,8 @@ import {
   Trash2,
   Pencil,
   Lock,
+  Medal,
+  Award,
   X
 } from 'lucide-react';
 
@@ -460,7 +462,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
   const toggleTeam = (key) => setExpandedTeams(prev => ({ ...prev, [key]: !prev[key] }));
 
   // Group scores by program > school > team, compute averages
-  const { propelData, levelupData } = useMemo(() => {
+  const { propelData, levelupData, winners } = useMemo(() => {
     const buildProgramData = (data) => {
       const schools = {};
       data.forEach(item => {
@@ -502,9 +504,54 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
     const propelItems = submittedData.filter(i => (i.program || 'propel') !== 'levelup');
     const levelupItems = submittedData.filter(i => i.program === 'levelup');
 
+    const propelSchools = buildProgramData(propelItems);
+    const levelupSchools = buildProgramData(levelupItems);
+
+    // Build flat team lists with school info for ranking
+    const flattenTeams = (programData) => {
+      const teams = [];
+      Object.entries(programData).forEach(([school, schoolTeams]) => {
+        schoolTeams.forEach(t => teams.push({ ...t, school }));
+      });
+      return teams;
+    };
+
+    // Compute top 3 teams per award category
+    const getTop3 = (teams, key) =>
+      [...teams].sort((a, b) => b[key] - a[key]).slice(0, 3);
+
+    // Compute school rankings by average of team averages
+    const getSchoolRankings = (programData) =>
+      Object.entries(programData)
+        .map(([school, teams]) => ({
+          school,
+          avgTotal: teams.length > 0
+            ? Math.round((teams.reduce((s, t) => s + t.avgTotal, 0) / teams.length) * 10) / 10
+            : 0,
+          teamCount: teams.length
+        }))
+        .sort((a, b) => b.avgTotal - a.avgTotal);
+
+    const propelTeams = flattenTeams(propelSchools);
+    const levelupTeams = flattenTeams(levelupSchools);
+
     return {
-      propelData: buildProgramData(propelItems),
-      levelupData: buildProgramData(levelupItems)
+      propelData: propelSchools,
+      levelupData: levelupSchools,
+      winners: {
+        propel: {
+          model: getTop3(propelTeams, 'avgModel'),
+          pres: getTop3(propelTeams, 'avgPres'),
+          drone: getTop3(propelTeams, 'avgDrone'),
+          schoolRankings: getSchoolRankings(propelSchools)
+        },
+        levelup: {
+          model: getTop3(levelupTeams, 'avgModel'),
+          pres: getTop3(levelupTeams, 'avgPres'),
+          drone: getTop3(levelupTeams, 'avgDrone'),
+          schoolRankings: getSchoolRankings(levelupSchools)
+        }
+      }
     };
   }, [submittedData]);
 
@@ -591,7 +638,7 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="w-full px-4 sm:px-6 py-4 sm:py-6">
       {/* Edit Modal */}
       {editingEntry && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -743,6 +790,77 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
         </div>
       ) : (
         <div className="space-y-10">
+          {/* Winners & Leaderboard Section */}
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className="bg-yellow-50 px-6 py-4 border-b">
+              <h2 className="text-xl font-bold text-yellow-800 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-600" /> Winners & Leaderboard
+              </h2>
+            </div>
+            <div className="p-6">
+              {[
+                { label: 'Propel', data: winners.propel, color: 'blue' },
+                { label: 'Level Up', data: winners.levelup, color: 'green' }
+              ].filter(({ data }) => data.schoolRankings.length > 0).map(({ label, data, color }) => (
+                <div key={label} className="mb-8 last:mb-0">
+                  <h3 className={`text-lg font-bold ${color === 'blue' ? 'text-blue-800' : 'text-green-800'} mb-4`}>{label}</h3>
+
+                  {/* Top School */}
+                  <div className="mb-5">
+                    <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                      <Award className="w-4 h-4" /> Top School — Highest Average Total
+                    </h4>
+                    <div className={`inline-flex items-center gap-3 ${color === 'blue' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-lg px-4 py-3`}>
+                      <Medal className={`w-6 h-6 ${color === 'blue' ? 'text-blue-600' : 'text-green-600'}`} />
+                      <div>
+                        <div className="font-bold text-gray-800 text-lg">
+                          {data.schoolRankings[0] ? `${getSchoolAbbr(data.schoolRankings[0].school)} - ${data.schoolRankings[0].school}` : '—'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Avg: {data.schoolRankings[0]?.avgTotal || 0}/36 across {data.schoolRankings[0]?.teamCount || 0} teams
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Award Categories */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { title: 'Best STEM Model', key: 'model', teams: data.model, max: 6 },
+                      { title: 'Best Presentation', key: 'pres', teams: data.pres, max: 3 },
+                      { title: 'Best Drone Solution', key: 'drone', teams: data.drone, max: 6 }
+                    ].map(({ title, key, teams, max }) => (
+                      <div key={key} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-800 mb-3 flex items-center gap-1">
+                          <Medal className="w-4 h-4 text-yellow-600" /> {title}
+                        </h4>
+                        <div className="space-y-2">
+                          {teams.map((team, i) => (
+                            <div key={team.teamName} className={`flex items-center gap-2 ${i === 0 ? 'font-bold' : ''}`}>
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                i === 0 ? 'bg-yellow-400 text-yellow-900'
+                                : i === 1 ? 'bg-gray-300 text-gray-700'
+                                : 'bg-amber-700 text-amber-100'
+                              }`}>{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate text-sm text-gray-800">{team.teamName}</div>
+                                <div className="text-xs text-gray-400">{getSchoolAbbr(team.school)} - {team.school}</div>
+                              </div>
+                              <span className="text-sm font-semibold text-yellow-700">
+                                {key === 'model' ? team.avgModel : key === 'pres' ? team.avgPres : team.avgDrone}/{max}
+                              </span>
+                            </div>
+                          ))}
+                          {teams.length === 0 && <p className="text-sm text-gray-400 italic">No scores yet</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {[
             { label: 'Propel', data: propelData, styles: {
               heading: 'text-blue-800', headingIcon: 'text-blue-600',
