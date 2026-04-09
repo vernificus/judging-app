@@ -223,10 +223,22 @@ const RUBRIC_SECTIONS = [
     items: [
       { id: 'overall_speaking', label: 'Speaking', type: 'scale', max: 5,
         criteria: ['Students speak confidently', 'Students expand on slide information', 'Students do not just read from slides'],
-        levels: ['Only read slides, even if incomplete', 'Struggled without reading slides', 'Relied on slides, sometimes read them', 'Used slides for prompting, didn\'t read completely', 'Spoke confidently, expanded beyond slides'] },
+        levels: [
+          'Students struggle to speak to their project and need prompting to continue.',
+          'Students struggle to speak to their project but stumble or get confused at each step.',
+          'Students can sometimes speak to their project but may stumble or get confused at times.',
+          'Students can speak to their project but don’t go in depth.',
+          'Students can clearly speak confidently to their project.'
+        ] },
       { id: 'overall_knowledge', label: 'Prior Knowledge', type: 'scale', max: 5,
         criteria: ['Presented from prior knowledge', 'Did not read slides', 'Expanded on information beyond slides'],
-        levels: ['Only read slides, even if incomplete', 'Struggled without reading slides', 'Relied on slides, sometimes read them', 'Used slides for prompting only', 'Presented from knowledge, expanded on information'] },
+        levels: [
+          'Students struggle to speak to their project and only read what is on the slides even if it’s an incomplete idea.',
+          'Students struggle to speak to their project without reading off of the slides. Students were missing key details from the slides.',
+          'Students presented relying on their slides and sometimes read off of the slides. Students only covered information contained on the slides.',
+          'Students presented relying on their slides for prompting but did not read off of the slides completely. Students only covered information contained on the slides.',
+          'Students presented from prior knowledge and did not read off of the slides. Students expanded on the information contained on the slides.'
+        ] },
       { id: 'overall_teamwork', label: 'Teamwork', type: 'scale', max: 5,
         criteria: ['Teamwork clear throughout presentation', 'Teamwork clear throughout work/model', 'All members had roles and contributed'],
         levels: ['No roles, struggled through presentation', 'Unorganized, prompted each other', 'Teamwork used but one student clearly the lead', 'Mostly teamwork, 1-2 students the lead', 'Clear teamwork throughout presentation and work'] },
