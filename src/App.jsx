@@ -233,8 +233,8 @@ const RUBRIC_SECTIONS = [
       { id: 'overall_knowledge', label: 'Prior Knowledge', type: 'scale', max: 5,
         criteria: ['Presented from prior knowledge', 'Did not read slides', 'Expanded on information beyond slides'],
         levels: [
-          ‘Students struggle to present their project and only read what is on the slides even if it\’s an incomplete idea.’,
-          ‘Students struggle to present their project without reading off of the slides. Students were missing key details from the slides.’,
+          'Students struggle to present their project and only read what is on the slides even if it\'s an incomplete idea.',
+          'Students struggle to present their project without reading off of the slides. Students were missing key details from the slides.',
           'Students presented relying on their slides and sometimes read off of the slides. Students only covered information contained on the slides.',
           'Students presented relying on their slides for prompting but did not read off of the slides completely. Students only covered information contained on the slides.',
           'Students presented from prior knowledge and did not read off of the slides. Students expanded on the information contained on the slides.'
