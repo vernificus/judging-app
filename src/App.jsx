@@ -147,7 +147,7 @@ const RUBRIC_SECTIONS = [
     items: [
       { id: 'pitch_intro', label: 'Shark Tank Pitch Intro', type: 'scale', max: 5,
         criteria: ['Company name introduced', 'Company name makes sense with solution', 'Specified investment amount'],
-        levels: ['No appropriate intro', 'Needed prompting to explain', 'Included 1 of 3 criteria', 'Included 2 of 3 criteria', 'Included all 3 criteria'] },
+        levels: ['Did not follow the Shark Tank cadence. Intro is not effective.', 'Needed prompting to begin or complete - included 1 of 3 criteria', 'Needed prompting to begin or complete - included 2 of 3 criteria', 'Introduction included 3 of 3 criteria', 'Hook was engaging and exciting to watch - included 3 of 3 criteria'] },
       { id: 'pitch_background', label: 'Background Information', type: 'scale', max: 5,
         criteria: ['Explained why they chose this animal', 'Explained what is making the animal endangered', 'Explained why Sharks should care about saving it'],
         levels: ['Struggled to explain', 'Needed prompting to explain', 'Covered 1 of 3 criteria', 'Covered 2 of 3 criteria', 'Covered all 3 criteria'] },
@@ -173,7 +173,7 @@ const RUBRIC_SECTIONS = [
         levels: ['No focused animal, only one version', 'Hard to identify, only one version', 'Needs some explanation, two versions present', 'Obvious but may be hidden, two versions present', 'Obvious & prominently displayed, two versions present'] },
       { id: 'model_habitat', label: 'Habitat/Ecosystem', type: 'scale', max: 5,
         criteria: ['Food sources for animal', 'Shelter', 'Water source', 'Food chain / food web', 'Other living organisms', 'All components belong in correct ecosystem', 'All components fit neatly on display tray'],
-        levels: ['Incomplete, many components not fitting on tray', '4-5 of 7 criteria present', '6 of 7 criteria present', 'All 7 present, mostly fits on tray', 'All 7 clearly present, fits neatly on tray'] },
+        levels: ['Incomplete, many components missing or not fitting on tray', '4-5 of 7 criteria present', '6 of 7 criteria present', 'All 7 criteria present', 'All 7 criteria present and clearly represented. Habitat is neat and makes perfect sense.'] },
     ]
   },
   {
@@ -193,13 +193,13 @@ const RUBRIC_SECTIONS = [
   },
   {
     id: 'bonus_auto',
-    title: 'Automation Bonus',
+    title: 'Strawbee Animation Bonus',
     description: 'Can students animate their animal using Micro:bit?',
     items: [
       { id: 'auto_animation', label: 'Animal Animation', type: 'scale', max: 5,
         criteria: ['Animal moves using Micro:bit and motors', 'Students showed off their code'],
         customScores: [0, 3, 5],
-        levels: ['Not present', 'Animation works, no code shown', 'Animation works + code shown'] },
+        levels: ['Not present / doesn\'t work', 'Animation works, no code shown', 'Animation works + code shown'] },
     ]
   },
   {
@@ -210,10 +210,10 @@ const RUBRIC_SECTIONS = [
       { id: 'drone_flight', label: 'Drone Flight', type: 'scale', max: 5,
         criteria: ['Drone autonomously flying (no keyboard)', 'Drone interacting with STEM model', 'Video provides clear evidence of success'],
         levels: ['Not completing mission, keyboard controlled', 'Attempting but not successfully completed', 'Autonomous + interacting, basic video evidence', 'Autonomous + interacting, adequate video evidence', 'Autonomous + interacting, clear/reliable video evidence'] },
-      { id: 'drone_stem', label: 'Drone STEM Additions', type: 'scale', max: 2,
-        criteria: ['STEM additions clearly present', 'Additions don\'t impede flight', 'No adjustment needed before each flight'],
-        customScores: [0, 1, 2],
-        levels: ['No additions present', 'Present but may impede flight or need adjustment', 'Present, functional, don\'t impede flight'] },
+      { id: 'drone_stem', label: 'Drone STEM Additions', type: 'scale', max: 4,
+        criteria: ['The students clearly have STEM additions to the drone', 'The STEM additions obviously look like what the students are explaining', 'The STEM additions do not get in the way of the drone\'s flight or inhibit the drone in any way', 'The STEM addition does not have to be adjusted or modified before each flight'],
+        customScores: [0, 1, 2, 3, 4],
+        levels: ['No additions present', 'Students clearly have STEM additions to the drone', 'STEM additions obviously look like what the students are explaining', 'STEM additions do not get in the way of the drone\'s flight or inhibit the drone in any way', 'STEM addition does not have to be adjusted or modified before each flight'] },
     ]
   },
   {
@@ -233,15 +233,15 @@ const RUBRIC_SECTIONS = [
       { id: 'overall_knowledge', label: 'Prior Knowledge', type: 'scale', max: 5,
         criteria: ['Presented from prior knowledge', 'Did not read slides', 'Expanded on information beyond slides'],
         levels: [
-          'Students struggle to speak to their project and only read what is on the slides even if it’s an incomplete idea.',
-          'Students struggle to speak to their project without reading off of the slides. Students were missing key details from the slides.',
+          ‘Students struggle to present their project and only read what is on the slides even if it\’s an incomplete idea.’,
+          ‘Students struggle to present their project without reading off of the slides. Students were missing key details from the slides.’,
           'Students presented relying on their slides and sometimes read off of the slides. Students only covered information contained on the slides.',
           'Students presented relying on their slides for prompting but did not read off of the slides completely. Students only covered information contained on the slides.',
           'Students presented from prior knowledge and did not read off of the slides. Students expanded on the information contained on the slides.'
         ] },
       { id: 'overall_teamwork', label: 'Teamwork', type: 'scale', max: 5,
         criteria: ['Teamwork clear throughout presentation', 'Teamwork clear throughout work/model', 'All members had roles and contributed'],
-        levels: ['No roles, struggled through presentation', 'Unorganized, prompted each other', 'Teamwork used but one student clearly the lead', 'Mostly teamwork, 1-2 students the lead', 'Clear teamwork throughout presentation and work'] },
+        levels: ['No roles, students did not know who was presenting each slide.', 'Unorganized, students prompted each other when it was their turn to speak.', 'Teamwork used but one student clearly took the lead.', 'Teamwork was evident, 1-2 students took the lead.', 'Clear teamwork throughout the presentation and work.'] },
     ]
   },
 ];
