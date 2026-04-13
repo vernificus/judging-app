@@ -92,7 +92,7 @@ const SCHOOL_DATA = {
   LEE: { name: "Leesburg", program: "propel", teams: ["The Turtle Sisters", "The Animal Rescuers", "Team of Greatness", "Sea Heroes", "Blue Alarm.com", "Eyes in the Sky", "The Savers", "Ferret Finders", "Paw Patrol"] },
   LUC: { name: "Lucketts", program: "propel", teams: ["The Engineering Whales", "The Space Invaders", "The GEX", "The Runners", "The Shreks"] },
   MEA: { name: "Meadowland", program: "propel", teams: ["Vaquita", "Amur Leopard", "Arctic Wolf", "Beavers", "Penguin Recyclers", "Hawksbill Helpers", "Maker Macaws", "Amur Armor", "Poacher Bots"] },
-  PMK: { name: "Potomack", program: "propel", teams: ["Swift Panthers", "Three Musketeers", "Super Stars", "The Savers", "Oh Um Giant Pandas", "The Koalas", "Cheetahs", "I don't know, we keep changing it"] },
+  PMK: { name: "Potowmack", program: "propel", teams: ["Swift Panthers", "Three Musketeers", "Super Stars", "The Savers", "Oh Um Giant Pandas", "The Koalas", "Cheetahs", "I don't know, we keep changing it"] },
   RRD: { name: "Rolling Ridge", program: "propel", teams: ["Lac of Luck", "Team Capybaras", "The Ducksters", "Speedy Sloth", "Los Masters", "The 3 S's", "La Cucaracha", "οι κατσαρίδες (the cockroaches)", "The Eagles", "The Polar Bears"] },
   SUG: { name: "Sugarland", program: "propel", teams: ["AAMO", "Team Gorillas", "EDA", "The Triple A's", "McChicken Squad", "Animal Savers", "Drone Inventors", "Please Robux"] },
   SUL: { name: "Sully", program: "propel", teams: ["Smarties", "The Baby Cookie", "Los Six Seven Kids", "The Seal Squad", "Las Bananas", "Thunder Strikers", "Los Kids", "Los Ying and Yang Elephantos"] },
