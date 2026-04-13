@@ -11,7 +11,8 @@ import {
   serverTimestamp,
   deleteDoc,
   updateDoc,
-  doc
+  doc,
+  writeBatch
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -35,7 +36,8 @@ import {
   Lock,
   Medal,
   Award,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 
 // --- Firebase Configuration ---
@@ -551,13 +553,15 @@ function ScoringView({
   );
 }
 
-function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEntry, onUpdateEntry }) {
+function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEntry, onUpdateEntry, onClearAllData }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [clearAllConfirm, setClearAllConfirm] = useState(false);
+  const [clearingData, setClearingData] = useState(false);
 
   // Track which schools and teams are expanded
   const [expandedSchools, setExpandedSchools] = useState({});
@@ -692,6 +696,15 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
     if (onDeleteEntry) {
       await onDeleteEntry(id);
       setDeleteConfirm(null);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (onClearAllData) {
+      setClearingData(true);
+      await onClearAllData();
+      setClearingData(false);
+      setClearAllConfirm(false);
     }
   };
 
@@ -884,8 +897,54 @@ function DashboardView({ submittedData, onScoreNewTeam, onExportCSV, onDeleteEnt
           >
             <Download className="w-4 h-4" /> Export CSV
           </button>
+          <button
+            onClick={() => setClearAllConfirm(true)}
+            disabled={submittedData.length === 0}
+            className="flex-1 sm:flex-none bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" /> Clear All Data
+          </button>
         </div>
       </div>
+
+      {/* Clear All Data Confirmation Modal */}
+      {clearAllConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Clear All Data</h3>
+                <p className="text-sm text-gray-500">{submittedData.length} submissions will be deleted</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-2">
+              This will permanently delete all submitted scores. A CSV export will be downloaded automatically before deletion.
+            </p>
+            <p className="text-sm text-red-600 font-medium mb-6">
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setClearAllConfirm(false)}
+                disabled={clearingData}
+                className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearAll}
+                disabled={clearingData}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {clearingData ? 'Clearing...' : 'Export & Clear All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {submittedData.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -1305,6 +1364,29 @@ export default function RubricApp() {
     URL.revokeObjectURL(url);
   };
 
+  const handleClearAllData = async () => {
+    if (!db || submittedData.length === 0) return;
+
+    // Force export before clearing
+    exportToCSV();
+
+    try {
+      // Delete in batches of 500 (Firestore batch limit)
+      const batchSize = 500;
+      for (let i = 0; i < submittedData.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = submittedData.slice(i, i + batchSize);
+        chunk.forEach(entry => {
+          batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'scores', entry.id));
+        });
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      alert("Error clearing data. Your CSV export was saved. Please try again.");
+    }
+  };
+
   // Show error screen if Firebase failed to initialize
   if (firebaseError) {
     return (
@@ -1354,6 +1436,7 @@ export default function RubricApp() {
           onExportCSV={exportToCSV}
           onDeleteEntry={handleDeleteEntry}
           onUpdateEntry={handleUpdateEntry}
+          onClearAllData={handleClearAllData}
         />
       )}
     </div>
